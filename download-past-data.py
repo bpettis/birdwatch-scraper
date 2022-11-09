@@ -7,7 +7,7 @@ import urllib.request, time, os
 
 
 # some global variables:
-start_date = date(2021, 1, 25)
+start_date = date(2022, 10, 1)
 end_date = date.today()
 
 bucket_name = os.environ.get("gcs_bucket_name")
