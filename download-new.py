@@ -70,7 +70,10 @@ def upload_blob(contents, destination_blob_name):
         f"{destination_blob_name} was uploaded to {bucket_name}."
     )
 
-def main():
+def main(event_data, context):
+    # We have to include event_data and context because these will be passed as arguments when invoked as a Cloud Function
+    # and the runtime will freak out if the function only accepts 0 arguments... go figure
+
 
     # Our list of dates to check only needs one date, today:
     dates_list.append(date.today().strftime("%Y/%m/%d"))
@@ -115,4 +118,4 @@ def main():
     
 if __name__ == "__main__":
     print('FYI: Script started directly as __main__')
-    main()
+    main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
