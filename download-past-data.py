@@ -1,7 +1,9 @@
 from datetime import date, timedelta
 from urllib.request import urlopen
 from urllib.error import HTTPError
-import urllib.request, time
+from google.cloud import storage
+import urllib.request, time, os
+
 
 
 # some global variables:
@@ -9,8 +11,11 @@ start_date = date(2021, 1, 25)
 start_date = date(2022,11,1)
 end_date = date.today()
 
+bucket_name = os.environ.get("gcs_bucket_name")
+
 dates_list = []
 url_list = {}
+
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days) + 1):
@@ -49,6 +54,28 @@ def query_url(url):
         print(e)
         return 1
 
+def upload_blob(contents, destination_blob_name):
+    """Uploads a file to the bucket."""
+
+    # The ID of your GCS bucket
+    # bucket_name = "your-bucket-name"
+
+    # The contents to upload to the file
+    # contents = "these are my contents"
+
+    # The ID of your GCS object
+    # destination_blob_name = "storage-object-name"
+
+    storage_client = storage.Client(os.environ.get("gcs_project_id"))
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+
+    blob.upload_from_string(contents)
+
+    print(
+        f"{destination_blob_name} was uploaded to {bucket_name}."
+    )
+
 def cloud_function():
     print('Reached Google Cloud Function Entry Point')
 
@@ -71,15 +98,12 @@ def cloud_function():
     # for each URL:
     for target in url_list:
         data = query_url(url_list[target]['notes'])
+        destination_file = target + '/notes.tsv'
         if isinstance(data, bytes):
-            print('neato the download worked!')
+            print('Looks like the download worked! Now saving to Google Cloud Storage')
+            upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
-
-        # save the file
-        # <handle errors>
-        # push the file to Google Cloud Storage
-        # delete the file locally
     
 if __name__ == "__main__":
     print('FYI: Script started directly as __main__')
