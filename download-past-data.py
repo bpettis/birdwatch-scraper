@@ -75,11 +75,7 @@ def upload_blob(contents, destination_blob_name):
         f"{destination_blob_name} was uploaded to {bucket_name}."
     )
 
-def cloud_function():
-    print('Reached Google Cloud Function Entry Point')
-
-    
-    
+def main():
 
     # Create a list of dates to check:
     for single_date in daterange(start_date, end_date):
@@ -106,4 +102,4 @@ def cloud_function():
     
 if __name__ == "__main__":
     print('FYI: Script started directly as __main__')
-    cloud_function()
+    main()
