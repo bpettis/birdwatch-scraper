@@ -7,7 +7,6 @@ import urllib.request, time, os
 
 
 # some global variables:
-start_date = date(2022, 10, 1)
 end_date = date.today()
 
 bucket_name = os.environ.get("gcs_bucket_name")
@@ -77,15 +76,12 @@ def main():
     dates_list.append(date.today().strftime("%Y/%m/%d"))
 
     # Use those dates to create a list of URLs to then download
-    url_counter = 0
     for target_date in dates_list:
         url_list[target_date] = {'notes': '', 'ratings': '', 'noteStatusHistory': ''}
         url_list[target_date]['notes'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/notes/notes-00000.tsv')
         url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.tsv')
         url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.tsv')
-        url_counter += 3
-    print(f'Created a dictionary containing URLs for {len(url_list)} dates of past data. It contains {str(url_counter)} total URLs')
-    # for each URL:
+
     for target in url_list:
         # download notes
         data = query_url(url_list[target]['notes'])
