@@ -29,6 +29,9 @@ However, the URL structure for the actual data files seems consistent enough:
 
 These URLs are publicly accessible without authentication. Past data uploads appear to be accessible by swapping out the year, month, and dates. File names are consistent
 
+**update: this is only true for recent-ish files. Most everything else returns 404s :/
+Looks like I can only get the last month or so
+
 # Project Goals:
 
 ## Short Term

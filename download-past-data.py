@@ -95,7 +95,7 @@ def main():
         data = query_url(url_list[target]['notes'])
         destination_file = target + '/notes.tsv'
         if isinstance(data, bytes):
-            print('Looks like the download worked! Now saving to Google Cloud Storage')
+            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
             upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
