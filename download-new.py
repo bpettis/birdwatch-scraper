@@ -87,6 +87,7 @@ def main():
     print(f'Created a dictionary containing URLs for {len(url_list)} dates of past data. It contains {str(url_counter)} total URLs')
     # for each URL:
     for target in url_list:
+        # download notes
         data = query_url(url_list[target]['notes'])
         destination_file = target + '/notes.tsv'
         if isinstance(data, bytes):
@@ -94,6 +95,26 @@ def main():
             upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
+
+
+        # download ratings
+        data = query_url(url_list[target]['ratings'])
+        destination_file = target + '/ratings.tsv'
+        if isinstance(data, bytes):
+            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
+            upload_blob(data, destination_file)
+        else:
+            print('seems something went wrong. check above for error messages')
+
+        # download notes status history
+        data = query_url(url_list[target]['noteStatusHistory'])
+        destination_file = target + '/noteStatusHistory.tsv'
+        if isinstance(data, bytes):
+            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
+            upload_blob(data, destination_file)
+        else:
+            print('seems something went wrong. check above for error messages')
+
     print('Finished!')
     
 if __name__ == "__main__":
