@@ -23,35 +23,44 @@ def daterange(start_date, end_date):
 def query_url(url):
     print(f'Querying {url}')
     try:
-        response = urllib.request.urlopen(url)
-        code = response.getcode()
-        print(f'{url} - {code}')
-        return response.read()
-    except HTTPError as e:
-        print(f'urllib.error.HTTPError - HTTP Error {e.code} | {e.reason}')
-        if e.code == 429: # HTTP 429 - too many requests
-            retry = e.headers['Retry-After'] # Check if the server told us how long to wait before sending the next request
-            try:
-                retry = int(retry) # Try converting to an int to check if we got a real number or not
-            except ValueError:
-                retry = 30 # We'll use the "Retry-After" value from the headers if present, but otherwise try again after 30 seconds
-            except TypeError:
-                retry = 30 # Use 30 seconds if we have a NoneType trying to go into the retry value
-            print(f'Waiting {retry} seconds before trying the next URL...')
-            time.sleep(retry)
-        return 1
-    except ConnectionResetError as e:
-        print('Got ConnectionResetError - waiting a bit before trying the next URL')
-        time.sleep(15)
-        return 1
-    except BrokenPipeError as e:
-        print('Got BrokenPipeError - waiting a bit before trying the next URL')
-        time.sleep(15)
-        return 1
+        r = requests.get(url, allow_redirects=True)
+        print(r.headers.get('content-type'))
+        return r.content
     except Exception as e:
-        print(f'Got some other error when attempting to download {url}')
+        print('Something went wrong!')
+        print(type(e))
         print(e)
         return 1
+    # try:
+    #     response = urllib.request.urlopen(url)
+    #     code = response.getcode()
+    #     print(f'{url} - {code}')
+    #     return response.read()
+    # except HTTPError as e:
+    #     print(f'urllib.error.HTTPError - HTTP Error {e.code} | {e.reason}')
+    #     if e.code == 429: # HTTP 429 - too many requests
+    #         retry = e.headers['Retry-After'] # Check if the server told us how long to wait before sending the next request
+    #         try:
+    #             retry = int(retry) # Try converting to an int to check if we got a real number or not
+    #         except ValueError:
+    #             retry = 30 # We'll use the "Retry-After" value from the headers if present, but otherwise try again after 30 seconds
+    #         except TypeError:
+    #             retry = 30 # Use 30 seconds if we have a NoneType trying to go into the retry value
+    #         print(f'Waiting {retry} seconds before trying the next URL...')
+    #         time.sleep(retry)
+    #     return 1
+    # except ConnectionResetError as e:
+    #     print('Got ConnectionResetError - waiting a bit before trying the next URL')
+    #     time.sleep(15)
+    #     return 1
+    # except BrokenPipeError as e:
+    #     print('Got BrokenPipeError - waiting a bit before trying the next URL')
+    #     time.sleep(15)
+    #     return 1
+    # except Exception as e:
+    #     print(f'Got some other error when attempting to download {url}')
+    #     print(e)
+    #     return 1
 
 def upload_blob(contents, destination_blob_name):
     """Uploads a file to the bucket."""
