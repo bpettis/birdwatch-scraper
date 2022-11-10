@@ -7,18 +7,13 @@ import urllib.request, time, os
 
 
 # some global variables:
-start_date = date(2022, 10, 1)
 end_date = date.today()
 
 bucket_name = os.environ.get("gcs_bucket_name")
+project_id = os.environ.get("GCP_PROJECT")
 
 dates_list = []
 url_list = {}
-
-
-def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days) + 1):
-        yield start_date + timedelta(n)
 
 def query_url(url):
     print(f'Querying {url}')
@@ -65,7 +60,7 @@ def upload_blob(contents, destination_blob_name):
     # The ID of your GCS object
     # destination_blob_name = "storage-object-name"
 
-    storage_client = storage.Client(os.environ.get("gcs_project_id"))
+    storage_client = storage.Client(project_id)
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
 
@@ -75,24 +70,23 @@ def upload_blob(contents, destination_blob_name):
         f"{destination_blob_name} was uploaded to {bucket_name}."
     )
 
-def main():
+def main(event_data, context):
+    # We have to include event_data and context because these will be passed as arguments when invoked as a Cloud Function
+    # and the runtime will freak out if the function only accepts 0 arguments... go figure
 
-    # Create a list of dates to check:
-    for single_date in daterange(start_date, end_date):
-        dates_list.append(single_date.strftime("%Y/%m/%d"))
+
+    # Our list of dates to check only needs one date, today:
+    dates_list.append(date.today().strftime("%Y/%m/%d"))
 
     # Use those dates to create a list of URLs to then download
-    url_counter = 0
     for target_date in dates_list:
         url_list[target_date] = {'notes': '', 'ratings': '', 'noteStatusHistory': ''}
         url_list[target_date]['notes'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/notes/notes-00000.tsv')
         url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.tsv')
         url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.tsv')
-        url_counter += 3
-    print(f'Created a dictionary containing URLs for {len(url_list)} dates of past data. It contains {str(url_counter)} total URLs')
-    # for each URL:
+
     for target in url_list:
-        # get notes
+        # download notes
         data = query_url(url_list[target]['notes'])
         destination_file = target + '/notes.tsv'
         if isinstance(data, bytes):
@@ -100,7 +94,9 @@ def main():
             upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
-        # get ratings
+
+
+        # download ratings
         data = query_url(url_list[target]['ratings'])
         destination_file = target + '/ratings.tsv'
         if isinstance(data, bytes):
@@ -109,7 +105,7 @@ def main():
         else:
             print('seems something went wrong. check above for error messages')
 
-        # get status history
+        # download notes status history
         data = query_url(url_list[target]['noteStatusHistory'])
         destination_file = target + '/noteStatusHistory.tsv'
         if isinstance(data, bytes):
@@ -117,7 +113,9 @@ def main():
             upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
+
+    print('Finished!')
     
 if __name__ == "__main__":
     print('FYI: Script started directly as __main__')
-    main()
+    main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
