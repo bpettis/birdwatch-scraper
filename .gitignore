@@ -4,6 +4,9 @@
 # Ignore interim TSV files
 *.tsv
 
+# Ignore Google Cloud Service Account Keys
+keys/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
