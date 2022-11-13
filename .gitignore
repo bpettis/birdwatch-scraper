@@ -1,6 +1,9 @@
 # macOS .DS_store files
 .DS_Store
 
+# Ignore interim TSV files
+*.tsv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
