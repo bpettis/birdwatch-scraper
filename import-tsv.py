@@ -101,7 +101,7 @@ def main(event_data, context):
     # and the runtime will freak out if the function only accepts 0 arguments... go figure
     print('Started Execution')
     
-    # Set up a db connection
+    # Set up a db connection pool
     db = connect_with_connector()
     try:
         # Using a with statement ensures that the connection is always released
@@ -128,7 +128,19 @@ def main(event_data, context):
 
     # # Insert data from that file into the db:
     print('Now converting dataframe into sql and placing in the notes table')
-    df.to_sql('notes', db, if_exists='replace')
+    # df.to_sql('notes', db, if_exists='replace')
+    print('Reconnecting db...')
+    try:
+        conn.close()
+        # Using a with statement ensures that the connection is always released
+        # back into the pool at the end of statement (even if an error occurs)
+        conn = db.raw_connection()
+        cur = conn.cursor()
+        print('db connection seems to have worked')
+    except:
+        print('db connection failure')
+        quit()
+    
 
     # print('Now inserting data from table_temp into notes - and skipping duplicates')
     # cur.execute("""Insert into notes select * From table_temp ON CONFLICT DO NOTHING;""");
@@ -145,6 +157,18 @@ def main(event_data, context):
     print(df)
     print('Now converting dataframe into sql and placing in the ratings table')
     df.to_sql('ratings', db, if_exists='replace')
+
+    print('Reconnecting db...')
+    try:
+        conn.close()
+        # Using a with statement ensures that the connection is always released
+        # back into the pool at the end of statement (even if an error occurs)
+        conn = db.raw_connection()
+        cur = conn.cursor()
+        print('db connection seems to have worked')
+    except:
+        print('db connection failure')
+        quit()
 
     ## Get noteStatusHistory ##
     object = file_path + '/noteStatusHistory.tsv'
