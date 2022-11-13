@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 from sqlalchemy import create_engine
 from google.cloud.sql.connector import Connector, IPTypes
+from datetime import datetime
 import os, sqlalchemy, pg8000
 
 # REQUIREMENTS
@@ -112,6 +113,7 @@ def main(event_data, context):
         print('db connection seems to have worked')
     except:
         print('db connection failure')
+        quit()
 
     
 
@@ -148,5 +150,10 @@ def main(event_data, context):
     print('Done!')
 
 if __name__ == "__main__":
+    start_time = datetime.now()
     print('FYI: Script started directly as __main__')
+    
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
+    end_time = datetime.now()
+    total_time = end_time - start_time
+    print(f'Total execution was: {total_time}')
