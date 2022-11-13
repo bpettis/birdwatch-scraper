@@ -102,8 +102,6 @@ def main(event_data, context):
     print('Started Execution')
     
     # Set up a db connection
-    # conn_string = 'postgres://user:password@host/data1'
-    # db = create_engine(conn_string)
     db = connect_with_connector()
     try:
         # Using a with statement ensures that the connection is always released
@@ -120,27 +118,42 @@ def main(event_data, context):
     # Get the most recent downloaded file
     #   (with error handling for if a file is missing for whatever reason)
     file_path = date.today().strftime("%Y/%m/%d")
+
+    ## Get notes ##
     object = file_path + '/notes.tsv'
 
     df = retrieve_tsv(object)
     print(df.info())
     print(df)
 
-    # Insert data from that file into the db:
-    print('Now converting dataframe into sql and placing in a temporary table')
-    df.to_sql('table_temp', db, if_exists='replace')
+    # # Insert data from that file into the db:
+    print('Now converting dataframe into sql and placing in the notes table')
+    df.to_sql('notes', db, if_exists='replace')
 
-    print('Now inserting data from table_temp into notes - and skipping duplicates')
-    cur.execute("""Insert into notes select * From table_temp ON CONFLICT DO NOTHING;""");
+    # print('Now inserting data from table_temp into notes - and skipping duplicates')
+    # cur.execute("""Insert into notes select * From table_temp ON CONFLICT DO NOTHING;""");
 
-    print('Now dropping the temporary table')
-    cur.execute("""DROP TABLE table_temp CASCADE;""");  # You can drop if you want to but the replace option in to_sql will drop and recreate the table
-    conn.commit()
+    # print('Now dropping the temporary table')
+    # cur.execute("""DROP TABLE table_temp CASCADE;""");  # You can drop if you want to but the replace option in to_sql will drop and recreate the table
+    # conn.commit()
 
-    # Repeat that for the other two files (ratings.tsv and notesStatusHistory.tsv)
-    #   for these two files, we may need to create a new column to use as the primary key
-    #   by combining noteID and participantID - which we can then use to avoid duplicates
+    ## Get ratings ##
+    object = file_path + '/ratings.tsv'
+    df = retrieve_tsv(object)
+    df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    print(df.info())
+    print(df)
+    print('Now converting dataframe into sql and placing in the ratings table')
+    df.to_sql('ratings', db, if_exists='replace')
 
+    ## Get noteStatusHistory ##
+    object = file_path + '/noteStatusHistory.tsv'
+    df = retrieve_tsv(object)
+    df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    print(df.info())
+    print(df)
+    print('Now converting dataframe into sql and placing in the status_history table')
+    df.to_sql('status_history', db, if_exists='replace')
 
     # close the db connection
     conn.close()
