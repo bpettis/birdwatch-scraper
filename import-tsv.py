@@ -91,6 +91,7 @@ def connect_with_connector() -> sqlalchemy.engine.base.Engine:
 
 def retrieve_tsv(object):
     path = 'gs://' + bucket_name + '/' + object
+    print(f'Loading {path} into a pandas DataFrame...')
     # gs://birdwatch-scraper_public-data/2022/11/12/ratings.tsv
     df = pd.read_csv(path, sep='\t', header=0)
     return df
@@ -129,7 +130,7 @@ def main(event_data, context):
     # # Insert data from that file into the db:
     print('Now converting dataframe into sql and placing in the notes table')
     # df.to_sql('notes', db, if_exists='replace')
-    print('Reconnecting db...')
+    print('Done! Now refreshing the db connection...')
     try:
         conn.close()
         # Using a with statement ensures that the connection is always released
@@ -158,7 +159,7 @@ def main(event_data, context):
     print('Now converting dataframe into sql and placing in the ratings table')
     df.to_sql('ratings', db, if_exists='replace')
 
-    print('Reconnecting db...')
+    print('Done! Now refreshing the db connection...')
     try:
         conn.close()
         # Using a with statement ensures that the connection is always released
