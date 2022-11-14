@@ -140,9 +140,13 @@ def main(event_data, context):
             print('db connection failure')
             quit()
 
-        df = retrieve_tsv(object)
-        print(df.info())
-        print(df)
+        try:
+            df = retrieve_tsv(object)
+            print(df.info())
+            print(df)
+        except:
+            print('Unable to find that TSV file. Skipping')
+            continue
 
         # # Insert data from that file into the db:
         print('Now converting dataframe into sql and placing in the notes table')
@@ -169,10 +173,14 @@ def main(event_data, context):
 
         ## Get ratings ##
         object = file_path + '/ratings.tsv'
-        df = retrieve_tsv(object)
-        df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        print(df.info())
-        print(df)
+        try:
+            df = retrieve_tsv(object)
+            df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+            print(df.info())
+            print(df)
+        except:
+            print('Unable to find that TSV file. Skipping')
+            continue
         print('Now converting dataframe into sql and placing in the ratings table')
         df.to_sql('ratings', db, if_exists='replace')
 
@@ -190,10 +198,14 @@ def main(event_data, context):
 
         ## Get noteStatusHistory ##
         object = file_path + '/noteStatusHistory.tsv'
-        df = retrieve_tsv(object)
-        df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        print(df.info())
-        print(df)
+        try:
+            df = retrieve_tsv(object)
+            df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+            print(df.info())
+            print(df)
+        except:
+            print('Unable to find that TSV file. Skipping')
+            continue
         print('Now converting dataframe into sql and placing in the status_history table')
         df.to_sql('status_history', db, if_exists='replace')
 
