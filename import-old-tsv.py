@@ -4,6 +4,7 @@ from datetime import date
 from sqlalchemy import create_engine
 from google.cloud.sql.connector import Connector, IPTypes
 from datetime import datetime, date, timedelta
+from dotenv import load_dotenv
 import os, sqlalchemy, pg8000
 
 # REQUIREMENTS
@@ -105,6 +106,7 @@ def main(event_data, context):
     # We have to include event_data and context because these will be passed as arguments when invoked as a Cloud Function
     # and the runtime will freak out if the function only accepts 0 arguments... go figure
     print('Started Execution')
+    load_dotenv() # load environment variables
     
     # Set up a db connection pool
     db = connect_with_connector()
