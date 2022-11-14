@@ -20,7 +20,7 @@ import os, sqlalchemy, pg8000
 # set up some global variables:
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
-start_date = date(2022, 10, 1)
+start_date = date(2022, 10, 15)
 end_date = date.today()
 dates_list = []
 
@@ -141,8 +141,8 @@ def main(event_data, context):
         except:
             print('db connection failure')
             quit()
-
-        try:
+        print(f'Searching for {object}')
+        try: 
             df = retrieve_tsv(object)
             print(df.info())
             print(df)
@@ -175,6 +175,7 @@ def main(event_data, context):
 
         ## Get ratings ##
         object = file_path + '/ratings.tsv'
+        print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
             df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
@@ -200,6 +201,7 @@ def main(event_data, context):
 
         ## Get noteStatusHistory ##
         object = file_path + '/noteStatusHistory.tsv'
+        print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
             df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
