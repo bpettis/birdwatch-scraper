@@ -18,6 +18,7 @@ import os, sqlalchemy, pg8000
 
 
 # set up some global variables:
+load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 
@@ -102,7 +103,7 @@ def main(event_data, context):
     # We have to include event_data and context because these will be passed as arguments when invoked as a Cloud Function
     # and the runtime will freak out if the function only accepts 0 arguments... go figure
     print('Started Execution')
-    load_dotenv(find_dotenv()) # load environment variables
+    
     
     # Set up a db connection pool
     db = connect_with_connector()
