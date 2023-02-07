@@ -25,6 +25,10 @@ def query_url(url):
     print(f'Querying {url}')
     try:
         r = requests.get(url, allow_redirects=True)
+        print(r.status_code)
+        if (r.status_code != 200):
+            print("Didn't get a HTTP 200 response")
+            return 1
         print(r.headers.get('content-type'))
         return r.content
     except Exception as e:
@@ -94,11 +98,12 @@ def main():
     # Use those dates to create a list of URLs to then download
     url_counter = 0
     for target_date in dates_list:
-        url_list[target_date] = {'notes': '', 'ratings': '', 'noteStatusHistory': ''}
+        url_list[target_date] = {'notes': '', 'ratings': '', 'noteStatusHistory': '', 'userEnrollmentStatus': ''}
         url_list[target_date]['notes'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/notes/notes-00000.tsv')
         url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.tsv')
         url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.tsv')
-        url_counter += 3
+        url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.tsv')
+        url_counter += 4
     print(f'Created a dictionary containing URLs for {len(url_list)} dates of past data. It contains {str(url_counter)} total URLs')
     # for each URL:
     for target in url_list:
@@ -107,7 +112,7 @@ def main():
         destination_file = target + '/notes.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            upload_blob(data, destination_file)
+            # upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
         # get ratings
@@ -115,16 +120,25 @@ def main():
         destination_file = target + '/ratings.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            upload_blob(data, destination_file)
+            # upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
 
-        # get status history
+        # get note status history data
         data = query_url(url_list[target]['noteStatusHistory'])
         destination_file = target + '/noteStatusHistory.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            upload_blob(data, destination_file)
+            # upload_blob(data, destination_file)
+        else:
+            print('seems something went wrong. check above for error messages')
+
+        # get user enrollment status data
+        data = query_url(url_list[target]['userEnrollmentStatus'])
+        destination_file = target + '/userEnrollmentStatus.tsv'
+        if isinstance(data, bytes):
+            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
+            # upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
     
