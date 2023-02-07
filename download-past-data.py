@@ -112,7 +112,7 @@ def main():
         destination_file = target + '/notes.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            # upload_blob(data, destination_file)
+            upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
         # get ratings
@@ -120,7 +120,7 @@ def main():
         destination_file = target + '/ratings.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            # upload_blob(data, destination_file)
+            upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
 
@@ -129,7 +129,7 @@ def main():
         destination_file = target + '/noteStatusHistory.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            # upload_blob(data, destination_file)
+            upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
 
@@ -138,7 +138,7 @@ def main():
         destination_file = target + '/userEnrollmentStatus.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            # upload_blob(data, destination_file)
+            upload_blob(data, destination_file)
         else:
             print('seems something went wrong. check above for error messages')
     
