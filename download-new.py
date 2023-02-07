@@ -106,6 +106,7 @@ def main(event_data, context):
         url_list[target_date] = {'notes': '', 'ratings': '', 'noteStatusHistory': '', 'userEnrollmentStatus': ''}
         url_list[target_date]['notes'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/notes/notes-00000.tsv')
         url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.tsv')
+        url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.tsv')
         url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.tsv')
 
     for target in url_list:
