@@ -21,6 +21,10 @@ def query_url(url):
     print(f'Querying {url}')
     try:
         r = requests.get(url, allow_redirects=True)
+        print(r.status_code)
+        if (r.status_code != 200):
+            print("Didn't get a HTTP 200 response")
+            return 1
         print(r.headers.get('content-type'))
         return r.content
     except Exception as e:
