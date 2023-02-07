@@ -99,10 +99,10 @@ def main(event_data, context):
 
     # Use those dates to create a list of URLs to then download
     for target_date in dates_list:
-        url_list[target_date] = {'notes': '', 'ratings': '', 'noteStatusHistory': ''}
+        url_list[target_date] = {'notes': '', 'ratings': '', 'noteStatusHistory': '', 'userEnrollmentStatus': ''}
         url_list[target_date]['notes'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/notes/notes-00000.tsv')
         url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.tsv')
-        url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.tsv')
+        url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.tsv')
 
     for target in url_list:
         # download notes
@@ -127,6 +127,15 @@ def main(event_data, context):
         # download notes status history
         data = query_url(url_list[target]['noteStatusHistory'])
         destination_file = target + '/noteStatusHistory.tsv'
+        if isinstance(data, bytes):
+            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
+            upload_blob(data, destination_file)
+        else:
+            print('seems something went wrong. check above for error messages')
+
+        # get user enrollment status data
+        data = query_url(url_list[target]['userEnrollmentStatus'])
+        destination_file = target + '/userEnrollmentStatus.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
             upload_blob(data, destination_file)
