@@ -210,11 +210,43 @@ def main(event_data, context):
         cn.execute(sql)
     conn.commit()
 
+    print('Done! Now refreshing the db connection...')
+    try:
+        conn.close()
+        # Using a with statement ensures that the connection is always released
+        # back into the pool at the end of statement (even if an error occurs)
+        conn = db.raw_connection()
+        cur = conn.cursor()
+        print('db connection seems to have worked')
+    except:
+        print('db connection failure')
+        quit()
+
+    ## Get userEnrollmentStatus ##
+    object = file_path + '/userEnrollmentStatus.tsv'
+    df = retrieve_tsv(object)
+    # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
+    df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    print(df.info())
+    print(df)
+    print('Now converting dataframe into sql and placing in a temporary table')
+    df.to_sql('temp_userenrollment', db, if_exists='replace')
+
+    print('Now copying into the real table...')
+    with db.begin() as cn:
+        sql = """INSERT INTO enrollment_status
+                SELECT *
+                FROM temp_userenrollment
+                ON CONFLICT DO NOTHING"""
+        cn.execute(sql)
+    conn.commit()
+
     # Clean up temp tables
     print('Now deleting temporary tables!')
     cur.execute("""DROP TABLE temp_notes CASCADE;""");
     cur.execute("""DROP TABLE temp_ratings CASCADE;""");
     cur.execute("""DROP TABLE temp_status CASCADE;""");
+    cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
     conn.commit()
 
     # close the db connection
