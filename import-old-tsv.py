@@ -277,9 +277,9 @@ def main(event_data, context):
 
         # Clean up temp tables
         print('Now deleting temporary tables!')
-        cur.execute("""DROP TABLE temp_notes CASCADE;""");
-        cur.execute("""DROP TABLE temp_ratings CASCADE;""");
-        cur.execute("""DROP TABLE temp_status CASCADE;""");
+        # cur.execute("""DROP TABLE temp_notes CASCADE;""");
+        # cur.execute("""DROP TABLE temp_ratings CASCADE;""");
+        # cur.execute("""DROP TABLE temp_status CASCADE;""");
         cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
         conn.commit()
 
