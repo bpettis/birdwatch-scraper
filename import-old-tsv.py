@@ -272,9 +272,6 @@ def main(event_data, context):
                         ON CONFLICT DO NOTHING"""
                 cn.execute(sql)
             conn.commit()
-        except:
-            print(f'Retrieving {object} failed. Skipping.')
-
             # Clean up temp tables
             print('Now deleting temporary tables!')
             # cur.execute("""DROP TABLE temp_notes CASCADE;""");
@@ -282,6 +279,10 @@ def main(event_data, context):
             # cur.execute("""DROP TABLE temp_status CASCADE;""");
             cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
             conn.commit()
+        except:
+            print(f'Retrieving {object} failed. Skipping.')
+
+            
 
         # close the db connection
         conn.close()
