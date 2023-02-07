@@ -195,7 +195,7 @@ def main(event_data, context):
     ## Get noteStatusHistory ##
     object = file_path + '/noteStatusHistory.tsv'
     df = retrieve_tsv(object)
-    df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
     print(df.info())
     print(df)
     print('Now converting dataframe into sql and placing in a temporary table')
