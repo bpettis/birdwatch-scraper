@@ -130,116 +130,116 @@ def main(event_data, context):
         file_path = current_date
 
         ## Get notes ##
-        object = file_path + '/notes.tsv'
-        try:
-            conn.close()
-            # Using a with statement ensures that the connection is always released
-            # back into the pool at the end of statement (even if an error occurs)
-            conn = db.raw_connection()
-            cur = conn.cursor()
-            print('db connection seems to have worked')
-        except:
-            print('db connection failure')
-            quit()
-        print(f'Searching for {object}')
-        try: 
-            df = retrieve_tsv(object)
-            print(df.info())
-            print(df)
-        except:
-            print('Unable to find that TSV file. Skipping')
-            continue
+        # object = file_path + '/notes.tsv'
+        # try:
+        #     conn.close()
+        #     # Using a with statement ensures that the connection is always released
+        #     # back into the pool at the end of statement (even if an error occurs)
+        #     conn = db.raw_connection()
+        #     cur = conn.cursor()
+        #     print('db connection seems to have worked')
+        # except:
+        #     print('db connection failure')
+        #     quit()
+        # print(f'Searching for {object}')
+        # try: 
+        #     df = retrieve_tsv(object)
+        #     print(df.info())
+        #     print(df)
+        # except:
+        #     print('Unable to find that TSV file. Skipping')
+        #     continue
 
-        # # Insert data from that file into the db:
-        print('Now converting dataframe into sql and placing into a temporary table')
-        df.to_sql('temp_notes', db, if_exists='replace')
+        # # # Insert data from that file into the db:
+        # print('Now converting dataframe into sql and placing into a temporary table')
+        # df.to_sql('temp_notes', db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO notes
-                    SELECT *
-                    FROM temp_notes
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
-
-        print('Done! Now refreshing the db connection...')
-        try:
-            conn.close()
-            # Using a with statement ensures that the connection is always released
-            # back into the pool at the end of statement (even if an error occurs)
-            conn = db.raw_connection()
-            cur = conn.cursor()
-            print('db connection seems to have worked')
-        except:
-            print('db connection failure')
-            quit()
-        
-
-        # print('Now inserting data from table_temp into notes - and skipping duplicates')
-        # cur.execute("""Insert into notes select * From table_temp ON CONFLICT DO NOTHING;""");
-
-        # print('Now dropping the temporary table')
-        # cur.execute("""DROP TABLE table_temp CASCADE;""");  # You can drop if you want to but the replace option in to_sql will drop and recreate the table
+        # print('Now copying into the real table...')
+        # with db.begin() as cn:
+        #     sql = """INSERT INTO notes
+        #             SELECT *
+        #             FROM temp_notes
+        #             ON CONFLICT DO NOTHING"""
+        #     cn.execute(sql)
         # conn.commit()
 
-        ## Get ratings ##
-        object = file_path + '/ratings.tsv'
-        print(f'Searching for {object}')
-        try:
-            df = retrieve_tsv(object)
-            df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-            print(df.info())
-            print(df)
-        except:
-            print('Unable to find that TSV file. Skipping')
-            continue
-        print('Now converting dataframe into sql and placing into a temporary table')
-        df.to_sql('temp_ratings', db, if_exists='replace')
+        # print('Done! Now refreshing the db connection...')
+        # try:
+        #     conn.close()
+        #     # Using a with statement ensures that the connection is always released
+        #     # back into the pool at the end of statement (even if an error occurs)
+        #     conn = db.raw_connection()
+        #     cur = conn.cursor()
+        #     print('db connection seems to have worked')
+        # except:
+        #     print('db connection failure')
+        #     quit()
+        
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO ratings
-                    SELECT *
-                    FROM temp_ratings
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
+        # # print('Now inserting data from table_temp into notes - and skipping duplicates')
+        # # cur.execute("""Insert into notes select * From table_temp ON CONFLICT DO NOTHING;""");
 
-        print('Done! Now refreshing the db connection...')
-        try:
-            conn.close()
-            # Using a with statement ensures that the connection is always released
-            # back into the pool at the end of statement (even if an error occurs)
-            conn = db.raw_connection()
-            cur = conn.cursor()
-            print('db connection seems to have worked')
-        except:
-            print('db connection failure')
-            quit()
+        # # print('Now dropping the temporary table')
+        # # cur.execute("""DROP TABLE table_temp CASCADE;""");  # You can drop if you want to but the replace option in to_sql will drop and recreate the table
+        # # conn.commit()
 
-        ## Get noteStatusHistory ##
-        object = file_path + '/noteStatusHistory.tsv'
-        print(f'Searching for {object}')
-        try:
-            df = retrieve_tsv(object)
-            df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-            print(df.info())
-            print(df)
-        except:
-            print('Unable to find that TSV file. Skipping')
-            continue
-        print('Now converting dataframe into sql and placing in a temporary table')
-        df.to_sql('temp_status', db, if_exists='replace')
+        # ## Get ratings ##
+        # object = file_path + '/ratings.tsv'
+        # print(f'Searching for {object}')
+        # try:
+        #     df = retrieve_tsv(object)
+        #     df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+        #     print(df.info())
+        #     print(df)
+        # except:
+        #     print('Unable to find that TSV file. Skipping')
+        #     continue
+        # print('Now converting dataframe into sql and placing into a temporary table')
+        # df.to_sql('temp_ratings', db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO status_history
-                    SELECT *
-                    FROM temp_status
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
+        # print('Now copying into the real table...')
+        # with db.begin() as cn:
+        #     sql = """INSERT INTO ratings
+        #             SELECT *
+        #             FROM temp_ratings
+        #             ON CONFLICT DO NOTHING"""
+        #     cn.execute(sql)
+        # conn.commit()
+
+        # print('Done! Now refreshing the db connection...')
+        # try:
+        #     conn.close()
+        #     # Using a with statement ensures that the connection is always released
+        #     # back into the pool at the end of statement (even if an error occurs)
+        #     conn = db.raw_connection()
+        #     cur = conn.cursor()
+        #     print('db connection seems to have worked')
+        # except:
+        #     print('db connection failure')
+        #     quit()
+
+        # ## Get noteStatusHistory ##
+        # object = file_path + '/noteStatusHistory.tsv'
+        # print(f'Searching for {object}')
+        # try:
+        #     df = retrieve_tsv(object)
+        #     df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+        #     print(df.info())
+        #     print(df)
+        # except:
+        #     print('Unable to find that TSV file. Skipping')
+        #     continue
+        # print('Now converting dataframe into sql and placing in a temporary table')
+        # df.to_sql('temp_status', db, if_exists='replace')
+
+        # print('Now copying into the real table...')
+        # with db.begin() as cn:
+        #     sql = """INSERT INTO status_history
+        #             SELECT *
+        #             FROM temp_status
+        #             ON CONFLICT DO NOTHING"""
+        #     cn.execute(sql)
+        # conn.commit()
 
         print('Done! Now refreshing the db connection...')
         try:
