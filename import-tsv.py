@@ -165,7 +165,7 @@ def main(event_data, context):
     ## Get ratings ##
     object = file_path + '/ratings.tsv'
     df = retrieve_tsv(object)
-    df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
     print(df.info())
     print(df)
     print('Now converting dataframe into sql and placing into a temporary table')
