@@ -255,22 +255,25 @@ def main(event_data, context):
 
         ## Get userEnrollmentStatus ##
         object = file_path + '/userEnrollmentStatus.tsv'
-        df = retrieve_tsv(object)
-        # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
-        df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        print(df.info())
-        print(df)
-        print('Now converting dataframe into sql and placing in a temporary table')
-        df.to_sql('temp_userenrollment', db, if_exists='replace')
+        try:
+            df = retrieve_tsv(object)
+            # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
+            df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
+            print(df.info())
+            print(df)
+            print('Now converting dataframe into sql and placing in a temporary table')
+            df.to_sql('temp_userenrollment', db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO enrollment_status
-                    SELECT *
-                    FROM temp_userenrollment
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
+            print('Now copying into the real table...')
+            with db.begin() as cn:
+                sql = """INSERT INTO enrollment_status
+                        SELECT *
+                        FROM temp_userenrollment
+                        ON CONFLICT DO NOTHING"""
+                cn.execute(sql)
+            conn.commit()
+        except:
+            print(f'Retrieving {object} failed. Skipping.')
 
         # Clean up temp tables
         print('Now deleting temporary tables!')
