@@ -146,22 +146,22 @@ def main(event_data, context):
             df = retrieve_tsv(object)
             print(df.info())
             print(df)
+
+            # # Insert data from that file into the db:
+            print('Now converting dataframe into sql and placing into a temporary table')
+            df.to_sql('temp_notes', db, if_exists='replace')
+
+            print('Now copying into the real table...')
+            with db.begin() as cn:
+                sql = """INSERT INTO notes
+                        SELECT *
+                        FROM temp_notes
+                        ON CONFLICT DO NOTHING"""
+                cn.execute(sql)
+            conn.commit()
         except:
             print('Unable to find that TSV file. Skipping')
-            continue
 
-        # # Insert data from that file into the db:
-        print('Now converting dataframe into sql and placing into a temporary table')
-        df.to_sql('temp_notes', db, if_exists='replace')
-
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO notes
-                    SELECT *
-                    FROM temp_notes
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
 
         print('Done! Now refreshing the db connection...')
         try:
@@ -191,20 +191,20 @@ def main(event_data, context):
             df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
             print(df.info())
             print(df)
+            print('Now converting dataframe into sql and placing into a temporary table')
+            df.to_sql('temp_ratings', db, if_exists='replace')
+
+            print('Now copying into the real table...')
+            with db.begin() as cn:
+                sql = """INSERT INTO ratings
+                        SELECT *
+                        FROM temp_ratings
+                        ON CONFLICT DO NOTHING"""
+                cn.execute(sql)
+            conn.commit()
         except:
             print('Unable to find that TSV file. Skipping')
-            continue
-        print('Now converting dataframe into sql and placing into a temporary table')
-        df.to_sql('temp_ratings', db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO ratings
-                    SELECT *
-                    FROM temp_ratings
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
 
         print('Done! Now refreshing the db connection...')
         try:
@@ -226,20 +226,23 @@ def main(event_data, context):
             df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
             print(df.info())
             print(df)
+
+            print('Now converting dataframe into sql and placing in a temporary table')
+            df.to_sql('temp_status', db, if_exists='replace')
+
+            print('Now copying into the real table...')
+            with db.begin() as cn:
+                sql = """INSERT INTO status_history
+                        SELECT *
+                        FROM temp_status
+                        ON CONFLICT DO NOTHING"""
+                cn.execute(sql)
+            conn.commit()
+            
         except:
             print('Unable to find that TSV file. Skipping')
-            continue
-        print('Now converting dataframe into sql and placing in a temporary table')
-        df.to_sql('temp_status', db, if_exists='replace')
-
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO status_history
-                    SELECT *
-                    FROM temp_status
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
+            
+        
 
         print('Done! Now refreshing the db connection...')
         try:
