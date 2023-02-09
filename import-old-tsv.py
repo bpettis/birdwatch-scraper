@@ -20,7 +20,7 @@ import os, sqlalchemy, pg8000
 # set up some global variables:
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
-start_date = date(2022, 10, 15)
+start_date = date(2023, 2, 8)
 end_date = date.today()
 dates_list = []
 
@@ -238,7 +238,7 @@ def main(event_data, context):
                         ON CONFLICT DO NOTHING"""
                 cn.execute(sql)
             conn.commit()
-            
+
         except:
             print('Unable to find that TSV file. Skipping')
             
