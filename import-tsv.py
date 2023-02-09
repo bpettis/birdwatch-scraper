@@ -123,117 +123,117 @@ def main(event_data, context):
     #   (with error handling for if a file is missing for whatever reason)
     file_path = date.today().strftime("%Y/%m/%d")
 
-    ## Get notes ##
-    try:
-        object = file_path + '/notes.tsv'
+    # ## Get notes ##
+    # try:
+    #     object = file_path + '/notes.tsv'
 
-        df = retrieve_tsv(object)
-        print(df.info())
-        print(df)
+    #     df = retrieve_tsv(object)
+    #     print(df.info())
+    #     print(df)
 
-        # # Insert data from that file into the db:
-        print('Now converting dataframe into sql and placing into a temporary table')
-        df.to_sql('temp_notes', db, if_exists='replace')
+    #     # # Insert data from that file into the db:
+    #     print('Now converting dataframe into sql and placing into a temporary table')
+    #     df.to_sql('temp_notes', db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO notes
-                    SELECT *
-                    FROM temp_notes
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
-    except Exception as e:
-        print('Error when getting notes:')
-        print(e)
+    #     print('Now copying into the real table...')
+    #     with db.begin() as cn:
+    #         sql = """INSERT INTO notes
+    #                 SELECT *
+    #                 FROM temp_notes
+    #                 ON CONFLICT DO NOTHING"""
+    #         cn.execute(sql)
+    #     conn.commit()
+    # except Exception as e:
+    #     print('Error when getting notes:')
+    #     print(e)
 
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
+    # print('Done! Now refreshing the db connection...')
+    # try:
+    #     conn.close()
+    #     # Using a with statement ensures that the connection is always released
+    #     # back into the pool at the end of statement (even if an error occurs)
+    #     conn = db.raw_connection()
+    #     cur = conn.cursor()
+    #     print('db connection seems to have worked')
+    # except:
+    #     print('db connection failure')
+    #     quit()
     
 
-    # print('Now inserting data from table_temp into notes - and skipping duplicates')
-    # cur.execute("""Insert into notes select * From table_temp ON CONFLICT DO NOTHING;""");
+    # # print('Now inserting data from table_temp into notes - and skipping duplicates')
+    # # cur.execute("""Insert into notes select * From table_temp ON CONFLICT DO NOTHING;""");
 
-    # print('Now dropping the temporary table')
-    # cur.execute("""DROP TABLE table_temp CASCADE;""");  # You can drop if you want to but the replace option in to_sql will drop and recreate the table
-    # conn.commit()
+    # # print('Now dropping the temporary table')
+    # # cur.execute("""DROP TABLE table_temp CASCADE;""");  # You can drop if you want to but the replace option in to_sql will drop and recreate the table
+    # # conn.commit()
 
-    ## Get ratings ##
-    try:
-        object = file_path + '/ratings.tsv'
-        df = retrieve_tsv(object)
-        df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        print(df.info())
-        print(df)
-        print('Now converting dataframe into sql and placing into a temporary table')
-        df.to_sql('temp_ratings', db, if_exists='replace')
+    # ## Get ratings ##
+    # try:
+    #     object = file_path + '/ratings.tsv'
+    #     df = retrieve_tsv(object)
+    #     df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    #     print(df.info())
+    #     print(df)
+    #     print('Now converting dataframe into sql and placing into a temporary table')
+    #     df.to_sql('temp_ratings', db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO ratings
-                    SELECT *
-                    FROM temp_ratings
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
-    except Exception as e:
-        print('Error when getting ratings:')
-        print(e)
+    #     print('Now copying into the real table...')
+    #     with db.begin() as cn:
+    #         sql = """INSERT INTO ratings
+    #                 SELECT *
+    #                 FROM temp_ratings
+    #                 ON CONFLICT DO NOTHING"""
+    #         cn.execute(sql)
+    #     conn.commit()
+    # except Exception as e:
+    #     print('Error when getting ratings:')
+    #     print(e)
 
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
+    # print('Done! Now refreshing the db connection...')
+    # try:
+    #     conn.close()
+    #     # Using a with statement ensures that the connection is always released
+    #     # back into the pool at the end of statement (even if an error occurs)
+    #     conn = db.raw_connection()
+    #     cur = conn.cursor()
+    #     print('db connection seems to have worked')
+    # except:
+    #     print('db connection failure')
+    #     quit()
 
-    ## Get noteStatusHistory ##
-    try:
-        object = file_path + '/noteStatusHistory.tsv'
-        df = retrieve_tsv(object)
-        df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        print(df.info())
-        print(df)
-        print('Now converting dataframe into sql and placing in a temporary table')
-        df.to_sql('temp_status', db, if_exists='replace')
+    # ## Get noteStatusHistory ##
+    # try:
+    #     object = file_path + '/noteStatusHistory.tsv'
+    #     df = retrieve_tsv(object)
+    #     df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    #     print(df.info())
+    #     print(df)
+    #     print('Now converting dataframe into sql and placing in a temporary table')
+    #     df.to_sql('temp_status', db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO status_history
-                    SELECT *
-                    FROM temp_status
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
-    except Exception as e:
-        print('Error when getting noteStatusHistoyr:')
-        print(e)
+    #     print('Now copying into the real table...')
+    #     with db.begin() as cn:
+    #         sql = """INSERT INTO status_history
+    #                 SELECT *
+    #                 FROM temp_status
+    #                 ON CONFLICT DO NOTHING"""
+    #         cn.execute(sql)
+    #     conn.commit()
+    # except Exception as e:
+    #     print('Error when getting noteStatusHistoyr:')
+    #     print(e)
 
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
+    # print('Done! Now refreshing the db connection...')
+    # try:
+    #     conn.close()
+    #     # Using a with statement ensures that the connection is always released
+    #     # back into the pool at the end of statement (even if an error occurs)
+    #     conn = db.raw_connection()
+    #     cur = conn.cursor()
+    #     print('db connection seems to have worked')
+    # except:
+    #     print('db connection failure')
+    #     quit()
 
     ## Get userEnrollmentStatus ##
     try:
@@ -260,9 +260,9 @@ def main(event_data, context):
 
     # Clean up temp tables
     print('Now deleting temporary tables!')
-    cur.execute("""DROP TABLE temp_notes CASCADE;""");
-    cur.execute("""DROP TABLE temp_ratings CASCADE;""");
-    cur.execute("""DROP TABLE temp_status CASCADE;""");
+    # cur.execute("""DROP TABLE temp_notes CASCADE;""");
+    # cur.execute("""DROP TABLE temp_ratings CASCADE;""");
+    # cur.execute("""DROP TABLE temp_status CASCADE;""");
     cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
     conn.commit()
 
