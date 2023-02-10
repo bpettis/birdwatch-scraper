@@ -49,3 +49,12 @@ Looks like I can only get the last month or so
 
 1. Publish this processed data for other researchers to use
 2. Make a public interface to interact with the database in an easily accessible way
+
+# Notes:
+
+**To-do:** Make the readme a bit more organized and sensible
+
+- On Feb 7 2023 I worked on adding functionality to download another file which is now available on twitter - the "User Enrollment Status History", which is the user "ranking" and its changes
+  - As part of this work, I ran into some problems with the prior script's functioning. Namely in terms of the fact that some column names may have changed in the TSV files. 
+    - In the notes and noteStatusHistory data, the `noteAuthorParticipantId` is used to store the participantId and not `participantId`
+    - In the ratings data `raterParticipantId` is used to store the participant Id.

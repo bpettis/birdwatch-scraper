@@ -20,7 +20,7 @@ import os, sqlalchemy, pg8000
 # set up some global variables:
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
-start_date = date(2022, 10, 15)
+start_date = date(2023, 2, 8)
 end_date = date.today()
 dates_list = []
 
@@ -146,22 +146,22 @@ def main(event_data, context):
             df = retrieve_tsv(object)
             print(df.info())
             print(df)
+
+            # # Insert data from that file into the db:
+            print('Now converting dataframe into sql and placing into a temporary table')
+            df.to_sql('temp_notes', db, if_exists='replace')
+
+            print('Now copying into the real table...')
+            with db.begin() as cn:
+                sql = """INSERT INTO notes
+                        SELECT *
+                        FROM temp_notes
+                        ON CONFLICT DO NOTHING"""
+                cn.execute(sql)
+            conn.commit()
         except:
             print('Unable to find that TSV file. Skipping')
-            continue
 
-        # # Insert data from that file into the db:
-        print('Now converting dataframe into sql and placing into a temporary table')
-        df.to_sql('temp_notes', db, if_exists='replace')
-
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO notes
-                    SELECT *
-                    FROM temp_notes
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
 
         print('Done! Now refreshing the db connection...')
         try:
@@ -191,20 +191,20 @@ def main(event_data, context):
             df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
             print(df.info())
             print(df)
+            print('Now converting dataframe into sql and placing into a temporary table')
+            df.to_sql('temp_ratings', db, if_exists='replace')
+
+            print('Now copying into the real table...')
+            with db.begin() as cn:
+                sql = """INSERT INTO ratings
+                        SELECT *
+                        FROM temp_ratings
+                        ON CONFLICT DO NOTHING"""
+                cn.execute(sql)
+            conn.commit()
         except:
             print('Unable to find that TSV file. Skipping')
-            continue
-        print('Now converting dataframe into sql and placing into a temporary table')
-        df.to_sql('temp_ratings', db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO ratings
-                    SELECT *
-                    FROM temp_ratings
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
 
         print('Done! Now refreshing the db connection...')
         try:
@@ -226,27 +226,66 @@ def main(event_data, context):
             df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
             print(df.info())
             print(df)
+
+            print('Now converting dataframe into sql and placing in a temporary table')
+            df.to_sql('temp_status', db, if_exists='replace')
+
+            print('Now copying into the real table...')
+            with db.begin() as cn:
+                sql = """INSERT INTO status_history
+                        SELECT *
+                        FROM temp_status
+                        ON CONFLICT DO NOTHING"""
+                cn.execute(sql)
+            conn.commit()
+
         except:
             print('Unable to find that TSV file. Skipping')
-            continue
-        print('Now converting dataframe into sql and placing in a temporary table')
-        df.to_sql('temp_status', db, if_exists='replace')
+            
+        
 
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = """INSERT INTO status_history
-                    SELECT *
-                    FROM temp_status
-                    ON CONFLICT DO NOTHING"""
-            cn.execute(sql)
-        conn.commit()
+        print('Done! Now refreshing the db connection...')
+        try:
+            conn.close()
+            # Using a with statement ensures that the connection is always released
+            # back into the pool at the end of statement (even if an error occurs)
+            conn = db.raw_connection()
+            cur = conn.cursor()
+            print('db connection seems to have worked')
+        except:
+            print('db connection failure')
+            quit()
 
-        # Clean up temp tables
-        print('Now deleting temporary tables!')
-        cur.execute("""DROP TABLE temp_notes CASCADE;""");
-        cur.execute("""DROP TABLE temp_ratings CASCADE;""");
-        cur.execute("""DROP TABLE temp_status CASCADE;""");
-        conn.commit()
+        ## Get userEnrollmentStatus ##
+        object = file_path + '/userEnrollmentStatus.tsv'
+        try:
+            df = retrieve_tsv(object)
+            # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
+            df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
+            print(df.info())
+            print(df)
+            print('Now converting dataframe into sql and placing in a temporary table')
+            df.to_sql('temp_userenrollment', db, if_exists='replace')
+
+            print('Now copying into the real table...')
+            with db.begin() as cn:
+                sql = """INSERT INTO enrollment_status
+                        SELECT *
+                        FROM temp_userenrollment
+                        ON CONFLICT DO NOTHING"""
+                cn.execute(sql)
+            conn.commit()
+            # Clean up temp tables
+            print('Now deleting temporary tables!')
+            cur.execute("""DROP TABLE temp_notes CASCADE;""");
+            cur.execute("""DROP TABLE temp_ratings CASCADE;""");
+            cur.execute("""DROP TABLE temp_status CASCADE;""");
+            cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
+            conn.commit()
+        except:
+            print(f'Retrieving {object} failed. Skipping.')
+
+            
 
         # close the db connection
         conn.close()
