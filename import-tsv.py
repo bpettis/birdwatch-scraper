@@ -140,6 +140,7 @@ def main(event_data, context):
 
     ## Get notes ##
     try:
+        logger.log('Retrieving notes.tsv', severity="INFO")
         object = file_path + '/notes.tsv'
 
         df = retrieve_tsv(object)
@@ -149,7 +150,7 @@ def main(event_data, context):
         # # Insert data from that file into the db:
         print('Now converting dataframe into sql and placing into a temporary table')
         df.to_sql('temp_notes', db, if_exists='replace')
-
+        logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
         with db.begin() as cn:
             sql = """INSERT INTO notes
@@ -190,6 +191,7 @@ def main(event_data, context):
 
     ## Get ratings ##
     try:
+        logger.log('Retrieving ratings.tsv', severity="INFO")
         object = file_path + '/ratings.tsv'
         df = retrieve_tsv(object)
         df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
@@ -199,6 +201,7 @@ def main(event_data, context):
         df.to_sql('temp_ratings', db, if_exists='replace')
 
         print('Now copying into the real table...')
+        logger.log('Copying temp_ratings into ratings', severity="INFO")
         with db.begin() as cn:
             sql = """INSERT INTO ratings
                     SELECT *
@@ -230,6 +233,7 @@ def main(event_data, context):
 
     ## Get noteStatusHistory ##
     try:
+        logger.log('Retrieving noteStatusHistory.tsv', severity="INFO")
         object = file_path + '/noteStatusHistory.tsv'
         df = retrieve_tsv(object)
         df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
@@ -239,6 +243,7 @@ def main(event_data, context):
         df.to_sql('temp_status', db, if_exists='replace')
 
         print('Now copying into the real table...')
+        logger.log('Retrieving temp_status into status_history', severity="INFO")
         with db.begin() as cn:
             sql = """INSERT INTO status_history
                     SELECT *
@@ -270,6 +275,7 @@ def main(event_data, context):
 
     ## Get userEnrollmentStatus ##
     try:
+        logger.log('Retrieving userEnrollmentStatus.tsv', severity="INFO")
         object = file_path + '/userEnrollmentStatus.tsv'
         df = retrieve_tsv(object)
         # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
@@ -280,6 +286,7 @@ def main(event_data, context):
         df.to_sql('temp_userenrollment', db, if_exists='replace')
 
         print('Now copying into the real table...')
+        logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
         with db.begin() as cn:
             sql = """INSERT INTO enrollment_status
                     SELECT *
