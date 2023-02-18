@@ -1,0 +1,7 @@
+version: '3'
+services:
+  birdwatch-parser:
+    container_name: birdwatch-parsing
+    build: .
+    env_file:
+      - .env
