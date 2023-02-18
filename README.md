@@ -58,3 +58,8 @@ Looks like I can only get the last month or so
   - As part of this work, I ran into some problems with the prior script's functioning. Namely in terms of the fact that some column names may have changed in the TSV files. 
     - In the notes and noteStatusHistory data, the `noteAuthorParticipantId` is used to store the participantId and not `participantId`
     - In the ratings data `raterParticipantId` is used to store the participant Id.
+
+
+- The Dockerfile will build an image that can run the scripts - it relies on having the correct information set in the .env file
+- Permissions for Google Cloud service account
+  - you will need to have a 'credentials.json' key file for a service account which has permission to access Cloud SQL as well as permission to write to Google Cloud Logging
