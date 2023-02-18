@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 from sqlalchemy import create_engine
 from google.cloud.sql.connector import Connector, IPTypes
+import google.cloud.logging
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
 import os, sqlalchemy, pg8000
@@ -21,6 +22,12 @@ import os, sqlalchemy, pg8000
 load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
+log_name = os.environ.get("LOG_ID")
+
+# Set up Google cloud logging:
+log_client = google.cloud.logging.Client(project=project_id)
+logger = log_client.logger(name=log_name)
+
 
 
 # [START cloud_sql_postgres_sqlalchemy_connect_connector]
@@ -113,9 +120,16 @@ def main(event_data, context):
         conn = db.raw_connection()
         cur = conn.cursor()
         print('db connection seems to have worked')
+        logger.log('Database Connection was successful')
     except Exception as e:
         print('db connection failure')
         print(e)
+        logger.log_struct(
+            {
+                "message": "Database Connection Failure",
+                "severity": "ERROR",
+                "exception": e
+            })
         quit()
 
     
@@ -147,6 +161,12 @@ def main(event_data, context):
     except Exception as e:
         print('Error when getting notes:')
         print(e)
+        logger.log_struct(
+            {
+                "message": "Error when retreiving notes.tsv",
+                "severity": "WARNING",
+                "exception": e
+            })
 
     print('Done! Now refreshing the db connection...')
     try:
@@ -189,6 +209,12 @@ def main(event_data, context):
     except Exception as e:
         print('Error when getting ratings:')
         print(e)
+        logger.log_struct(
+            {
+                "message": "Error when retreiving ratings.tsv",
+                "severity": "WARNING",
+                "exception": e
+            })
 
     print('Done! Now refreshing the db connection...')
     try:
@@ -223,6 +249,12 @@ def main(event_data, context):
     except Exception as e:
         print('Error when getting noteStatusHistoyr:')
         print(e)
+        logger.log_struct(
+            {
+                "message": "Error when retreiving noteStatusHistory.tsv",
+                "severity": "WARNING",
+                "exception": e
+            })
 
     print('Done! Now refreshing the db connection...')
     try:
@@ -258,6 +290,12 @@ def main(event_data, context):
     except Exception as e:
         print('Error when getting userEnrollmentStatus:')
         print(e)
+        logger.log_struct(
+            {
+                "message": "Error when retreiving userEnrollmentStatus.tsv",
+                "severity": "WARNING",
+                "exception": e
+            })
 
     # Clean up temp tables
     print('Now deleting temporary tables!')
@@ -266,9 +304,16 @@ def main(event_data, context):
         cur.execute("""DROP TABLE temp_ratings CASCADE;""");
         cur.execute("""DROP TABLE temp_status CASCADE;""");
         cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
+        logger.log("Tempotary tables dropped", severity="INFO")
     except Exception as e:
         print('Unable to drop a temp table. Does it actually exist?')
         print(e)
+        logger.log_struct(
+            {
+                "message": "Error when dropping the the temporary tables",
+                "severity": "WARNING",
+                "exception": e
+            })
     conn.commit()
 
     # close the db connection
@@ -281,7 +326,9 @@ def main(event_data, context):
 if __name__ == "__main__":
     start_time = datetime.now()
     print('FYI: Script started directly as __main__')
+    logger.log('Script Execution Started', severity="INFO")
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
     end_time = datetime.now()
     total_time = end_time - start_time
     print(f'Total execution was: {total_time}')
+    logger.log('Script execution finished', severity="INFO")
