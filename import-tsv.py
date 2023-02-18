@@ -113,8 +113,9 @@ def main(event_data, context):
         conn = db.raw_connection()
         cur = conn.cursor()
         print('db connection seems to have worked')
-    except:
+    except Exception as e:
         print('db connection failure')
+        print(e)
         quit()
 
     
@@ -260,10 +261,14 @@ def main(event_data, context):
 
     # Clean up temp tables
     print('Now deleting temporary tables!')
-    cur.execute("""DROP TABLE temp_notes CASCADE;""");
-    cur.execute("""DROP TABLE temp_ratings CASCADE;""");
-    cur.execute("""DROP TABLE temp_status CASCADE;""");
-    cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
+    try:
+        cur.execute("""DROP TABLE temp_notes CASCADE;""");
+        cur.execute("""DROP TABLE temp_ratings CASCADE;""");
+        cur.execute("""DROP TABLE temp_status CASCADE;""");
+        cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
+    except Exception as e:
+        print('Unable to drop a temp table. Does it actually exist?')
+        print(e)
     conn.commit()
 
     # close the db connection
@@ -276,7 +281,6 @@ def main(event_data, context):
 if __name__ == "__main__":
     start_time = datetime.now()
     print('FYI: Script started directly as __main__')
-    
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
     end_time = datetime.now()
     total_time = end_time - start_time
