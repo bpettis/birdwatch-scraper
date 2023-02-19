@@ -325,7 +325,18 @@ def main(event_data, context):
                 "severity": "WARNING",
                 "exception": str(type(e))
             })
-    conn.commit()
+    try:
+        conn.commit()
+    except Exception as e:
+        print('Unable to commit SQL changes. Was anything actually changed?')
+        print(str(type(e)))
+        logger.log_struct(
+            {
+                "message": "Unable to commit SQL changes. Was anything actually changed?",
+                "severity": "ERROR",
+                "exception": str(type(e))
+            })
+
 
     # close the db connection
     conn.close()
