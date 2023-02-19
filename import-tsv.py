@@ -323,7 +323,7 @@ def main(event_data, context):
             {
                 "message": "Error when dropping the the temporary tables",
                 "severity": "WARNING",
-                "exception": estr(type(e))
+                "exception": str(type(e))
             })
     conn.commit()
 
