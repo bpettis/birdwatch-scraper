@@ -149,6 +149,7 @@ def main(event_data, context):
 
         # # Insert data from that file into the db:
         print('Now converting dataframe into sql and placing into a temporary table')
+        logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
         df.to_sql('temp_notes', db, if_exists='replace')
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
@@ -198,6 +199,7 @@ def main(event_data, context):
         print(df.info())
         print(df)
         print('Now converting dataframe into sql and placing into a temporary table')
+        logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
         df.to_sql('temp_ratings', db, if_exists='replace')
 
         print('Now copying into the real table...')
@@ -240,6 +242,7 @@ def main(event_data, context):
         print(df.info())
         print(df)
         print('Now converting dataframe into sql and placing in a temporary table')
+        logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
         df.to_sql('temp_status', db, if_exists='replace')
 
         print('Now copying into the real table...')
@@ -283,6 +286,7 @@ def main(event_data, context):
         print(df.info())
         print(df)
         print('Now converting dataframe into sql and placing in a temporary table')
+        logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
         df.to_sql('temp_userenrollment', db, if_exists='replace')
 
         print('Now copying into the real table...')
