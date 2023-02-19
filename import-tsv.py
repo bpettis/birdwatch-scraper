@@ -123,12 +123,12 @@ def main(event_data, context):
         logger.log('Database Connection was successful')
     except Exception as e:
         print('db connection failure')
-        print(str(e))
+        print(type(e))
         logger.log_struct(
             {
                 "message": "Database Connection Failure",
                 "severity": "ERROR",
-                "exception": str(e)
+                "exception": type(e)
             })
         quit()
 
@@ -162,12 +162,12 @@ def main(event_data, context):
         conn.commit()
     except Exception as e:
         print('Error when getting notes:')
-        print(str(e))
+        print(type(e))
         logger.log_struct(
             {
                 "message": "Error when retreiving notes.tsv",
                 "severity": "WARNING",
-                "exception": str(e)
+                "exception": type(e)
             })
 
     print('Done! Now refreshing the db connection...')
@@ -256,12 +256,12 @@ def main(event_data, context):
         conn.commit()
     except Exception as e:
         print('Error when getting noteStatusHistoyr:')
-        print(str(e))
+        print(type(e))
         logger.log_struct(
             {
                 "message": "Error when retreiving noteStatusHistory.tsv",
                 "severity": "WARNING",
-                "exception": str(e)
+                "exception": type(e)
             })
 
     print('Done! Now refreshing the db connection...')
@@ -300,12 +300,12 @@ def main(event_data, context):
         conn.commit()
     except Exception as e:
         print('Error when getting userEnrollmentStatus:')
-        print(str(e))
+        print(type(e))
         logger.log_struct(
             {
                 "message": "Error when retreiving userEnrollmentStatus.tsv",
                 "severity": "WARNING",
-                "exception": str(e)
+                "exception": type(e)
             })
 
     # Clean up temp tables
@@ -318,12 +318,12 @@ def main(event_data, context):
         logger.log("Tempotary tables dropped", severity="INFO")
     except Exception as e:
         print('Unable to drop a temp table. Does it actually exist?')
-        print(str(e))
+        print(type(e))
         logger.log_struct(
             {
                 "message": "Error when dropping the the temporary tables",
                 "severity": "WARNING",
-                "exception": estr(e)
+                "exception": etype(e)
             })
     conn.commit()
 
