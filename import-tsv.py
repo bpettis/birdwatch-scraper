@@ -213,12 +213,12 @@ def main(event_data, context):
         conn.commit()
     except Exception as e:
         print('Error when getting ratings:')
-        print(e)
+        print(str(type(e)))
         logger.log_struct(
             {
                 "message": "Error when retreiving ratings.tsv",
                 "severity": "WARNING",
-                "exception": e
+                "exception": str(type(e))
             })
 
     print('Done! Now refreshing the db connection...')
