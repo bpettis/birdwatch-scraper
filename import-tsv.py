@@ -206,10 +206,7 @@ def main(event_data, context):
         print('Now copying into the real table...')
         logger.log('Copying temp_ratings into ratings', severity="INFO")
         with db.begin() as cn:
-            sql = """INSERT INTO ratings
-                    SELECT *
-                    FROM temp_ratings
-                    ON CONFLICT DO NOTHING"""
+            sql = """INSERT INTO ratings SELECT * FROM temp_ratings ON CONFLICT DO NOTHING"""
             cn.execute(sql)
         conn.commit()
     except Exception as e:
@@ -250,10 +247,7 @@ def main(event_data, context):
         print('Now copying into the real table...')
         logger.log('Retrieving temp_status into status_history', severity="INFO")
         with db.begin() as cn:
-            sql = """INSERT INTO status_history
-                    SELECT *
-                    FROM temp_status
-                    ON CONFLICT DO NOTHING"""
+            sql = """INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING"""
             cn.execute(sql)
         conn.commit()
     except Exception as e:
@@ -295,10 +289,7 @@ def main(event_data, context):
         print('Now copying into the real table...')
         logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
         with db.begin() as cn:
-            sql = """INSERT INTO enrollment_status
-                    SELECT *
-                    FROM temp_userenrollment
-                    ON CONFLICT DO NOTHING"""
+            sql = """INSERT INTO enrollment_status SELECT * FROM temp_userenrollment ON CONFLICT DO NOTHING"""
             cn.execute(sql)
         conn.commit()
     except Exception as e:
