@@ -163,6 +163,7 @@ def main(event_data, context):
     except Exception as e:
         print('Error when getting notes:')
         print(str(type(e)))
+        print(e)
         logger.log_struct(
             {
                 "message": "Error when retreiving notes.tsv",
@@ -214,6 +215,7 @@ def main(event_data, context):
     except Exception as e:
         print('Error when getting ratings:')
         print(str(type(e)))
+        print(e)
         logger.log_struct(
             {
                 "message": "Error when retreiving ratings.tsv",
@@ -257,6 +259,7 @@ def main(event_data, context):
     except Exception as e:
         print('Error when getting noteStatusHistoyr:')
         print(str(type(e)))
+        print(e)
         logger.log_struct(
             {
                 "message": "Error when retreiving noteStatusHistory.tsv",
@@ -301,6 +304,7 @@ def main(event_data, context):
     except Exception as e:
         print('Error when getting userEnrollmentStatus:')
         print(str(type(e)))
+        print(e)
         logger.log_struct(
             {
                 "message": "Error when retreiving userEnrollmentStatus.tsv",
