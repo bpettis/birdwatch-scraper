@@ -1,7 +1,7 @@
 from google.cloud import storage
 import pandas as pd
 from datetime import date
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from google.cloud.sql.connector import Connector, IPTypes
 import google.cloud.logging
 from datetime import datetime
@@ -154,7 +154,7 @@ def main(event_data, context):
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
         with db.begin() as cn:
-            sql = """INSERT INTO notes SELECT * FROM temp_notes ON CONFLICT DO NOTHING;"""
+            sql = text("""INSERT INTO notes SELECT * FROM temp_notes ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
         conn.commit()
     except Exception as e:
@@ -203,7 +203,7 @@ def main(event_data, context):
         print('Now copying into the real table...')
         logger.log('Copying temp_ratings into ratings', severity="INFO")
         with db.begin() as cn:
-            sql = """INSERT INTO ratings SELECT * FROM temp_ratings ON CONFLICT DO NOTHING;"""
+            sql = text("""INSERT INTO ratings SELECT * FROM temp_ratings ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
         conn.commit()
     except Exception as e:
@@ -244,7 +244,7 @@ def main(event_data, context):
         print('Now copying into the real table...')
         logger.log('Retrieving temp_status into status_history', severity="INFO")
         with db.begin() as cn:
-            sql = """INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;"""
+            sql = text("""INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
         conn.commit()
     except Exception as e:
@@ -286,7 +286,7 @@ def main(event_data, context):
         print('Now copying into the real table...')
         logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
         with db.begin() as cn:
-            sql = """INSERT INTO enrollment_status SELECT * FROM temp_userenrollment ON CONFLICT DO NOTHING"""
+            sql = text("""INSERT INTO enrollment_status SELECT * FROM temp_userenrollment ON CONFLICT DO NOTHING""")
             cn.execute(sql)
         conn.commit()
     except Exception as e:
