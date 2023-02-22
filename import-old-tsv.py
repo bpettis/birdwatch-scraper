@@ -1,6 +1,6 @@
 from google.cloud import storage
 import pandas as pd
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy import create_engine, text
 from google.cloud.sql.connector import Connector, IPTypes
 from datetime import datetime, date, timedelta
@@ -25,7 +25,7 @@ bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 start_date = os.environ.get("START_DATE", "2023, 2, 19")
 start_date = datetime.strptime(start_date, '%Y, %m, %d')
-end_date = date.today()
+end_date = datetime.today()
 dates_list = []
 
 # Set up Google cloud logging:
