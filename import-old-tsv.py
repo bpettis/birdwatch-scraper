@@ -7,6 +7,7 @@ from datetime import datetime, date, timedelta
 from dotenv import load_dotenv, find_dotenv
 import os, sqlalchemy, pg8000
 import google.cloud.logging
+import socket
 
 # REQUIREMENTS
 #
@@ -22,7 +23,7 @@ import google.cloud.logging
 load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
-start_date = date(2023, 2, 19)
+start_date = os.environ.get("START_DATE", "2023, 2, 19")
 end_date = date.today()
 dates_list = []
 
@@ -363,12 +364,12 @@ def main(event_data, context):
 if __name__ == "__main__":
     start_time = datetime.now()
     print('FYI: Script started directly as __main__')
-    logger.log('Script Execution Started - import-old-tsv.py', severity="INFO")
     logger.log_struct(
             {
                 "message": "Script Execution Started - import-old-tsv.py",
                 "severity": "INFO",
-                "start-date": str(start_date)
+                "start-date": str(start_date),
+                "hostname": str(socket.gethostname())
             })
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
     end_time = datetime.now()
