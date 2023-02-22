@@ -105,6 +105,13 @@ def connect_with_connector() -> sqlalchemy.engine.base.Engine:
 def retrieve_tsv(object):
     path = 'gs://' + bucket_name + '/' + object
     print(f'Loading {path} into a pandas DataFrame...')
+    logger.log_struct(
+            {
+                "message": "Retrieving TSV and loading into Pandas dataframe",
+                "severity": "INFO",
+                "object": str(object),
+                "gcs-path": str(path)
+            })
     # gs://birdwatch-scraper_public-data/2022/11/12/ratings.tsv
     df = pd.read_csv(path, sep='\t', header=0)
     return df
