@@ -152,6 +152,19 @@ def main(event_data, context):
         df = retrieve_tsv(object)
         print(df.info())
         print(df)
+        # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        size = df.size
+        drop = int(size * 0.75)
+        df.drop(df.tail(drop).index, inplace = True)
+        logger.log_struct(
+            {
+                "message": 'Dropped rows from dataframe',
+                "original-size": str(size),
+                "dropped-rows": str(drop),
+                "new-size": str(df.size),
+                "severity": 'INFO',
+            }
+        )
 
         # # Insert data from that file into the db:
         print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
@@ -163,6 +176,7 @@ def main(event_data, context):
                 "table-name": table_name
             }
         )
+
         df.to_sql(table_name, db, if_exists='replace')
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
@@ -224,6 +238,19 @@ def main(event_data, context):
         df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
+        # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        size = df.size
+        drop = int(size * 0.75)
+        df.drop(df.tail(drop).index, inplace = True)
+        logger.log_struct(
+            {
+                "message": 'Dropped rows from dataframe',
+                "original-size": str(size),
+                "dropped-rows": str(drop),
+                "new-size": str(df.size),
+                "severity": 'INFO',
+            }
+        )
         print('Now converting dataframe into sql and placing into a temporary table')
         logger.log_struct(
             {
@@ -291,6 +318,19 @@ def main(event_data, context):
         df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
+        # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        size = df.size
+        drop = int(size * 0.75)
+        df.drop(df.tail(drop).index, inplace = True)
+        logger.log_struct(
+            {
+                "message": 'Dropped rows from dataframe',
+                "original-size": str(size),
+                "dropped-rows": str(drop),
+                "new-size": str(df.size),
+                "severity": 'INFO',
+            }
+        )
         print('Now converting dataframe into sql and placing in a temporary table')
         logger.log_struct(
             {
@@ -359,6 +399,19 @@ def main(event_data, context):
         df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
+        # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        size = df.size
+        drop = int(size * 0.75)
+        df.drop(df.tail(drop).index, inplace = True)
+        logger.log_struct(
+            {
+                "message": 'Dropped rows from dataframe',
+                "original-size": str(size),
+                "dropped-rows": str(drop),
+                "new-size": str(df.size),
+                "severity": 'INFO',
+            }
+        )
         print('Now converting dataframe into sql and placing in a temporary table')
         logger.log_struct(
             {
