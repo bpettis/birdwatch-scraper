@@ -147,25 +147,31 @@ def main(event_data, context):
 
     ## Get notes ##
     try:
-        logger.log('Retrieving notes.tsv', severity="INFO")
         object = file_path + '/notes.tsv'
-
+        table_name = 'temp_notes_' + date.today().strftime("%Y%m%d")
         df = retrieve_tsv(object)
         print(df.info())
         print(df)
 
         # # Insert data from that file into the db:
-        print('Now converting dataframe into sql and placing into a temporary table')
-        logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
-        df.to_sql('temp_notes', db, if_exists='replace')
+        print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
+        logger.log_struct(
+            {
+                "message": 'Now converting dataframe into sql and placing into a temporary table',
+                "severity": "INFO",
+                "object": str(object),
+                "table-name": table_name
+            }
+        )
+        df.to_sql(table_name, db, if_exists='replace')
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
         with db.begin() as cn:
-            sql = text("""INSERT INTO notes SELECT * FROM temp_notes ON CONFLICT DO NOTHING;""")
+            sql = text("""INSERT INTO notes SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
         conn.commit()
     except Exception as e:
-        print('Error when getting notes:')
+        print('Error when processing notes:')
         print(str(type(e)))
         print(e)
         logger.log_struct(
@@ -197,20 +203,27 @@ def main(event_data, context):
 
     ## Get ratings ##
     try:
-        logger.log('Retrieving ratings.tsv', severity="INFO")
         object = file_path + '/ratings.tsv'
+        table_name = 'temp_ratings_' + date.today().strftime("%Y%m%d")
         df = retrieve_tsv(object)
         df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
         print('Now converting dataframe into sql and placing into a temporary table')
-        logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
-        df.to_sql('temp_ratings', db, if_exists='replace')
+        logger.log_struct(
+            {
+                "message": 'Now converting dataframe into sql and placing into a temporary table',
+                "severity": "INFO",
+                "object": str(object),
+                "table-name": table_name
+            }
+        )
+        df.to_sql(table_name, db, if_exists='replace')
 
         print('Now copying into the real table...')
         logger.log('Copying temp_ratings into ratings', severity="INFO")
         with db.begin() as cn:
-            sql = text("""INSERT INTO ratings SELECT * FROM temp_ratings ON CONFLICT DO NOTHING;""")
+            sql = text("""INSERT INTO ratings SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
         conn.commit()
     except Exception as e:
@@ -219,7 +232,7 @@ def main(event_data, context):
         print(e)
         logger.log_struct(
             {
-                "message": "Error when retreiving ratings.tsv",
+                "message": "Error when processing ratings.tsv",
                 "severity": "WARNING",
                 "exception": str(type(e))
             })
@@ -238,24 +251,31 @@ def main(event_data, context):
 
     ## Get noteStatusHistory ##
     try:
-        logger.log('Retrieving noteStatusHistory.tsv', severity="INFO")
         object = file_path + '/noteStatusHistory.tsv'
+        table_name = 'temp_status_' + date.today().strftime("%Y%m%d")
         df = retrieve_tsv(object)
         df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
         print('Now converting dataframe into sql and placing in a temporary table')
-        logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
-        df.to_sql('temp_status', db, if_exists='replace')
+        logger.log_struct(
+            {
+                "message": 'Now converting dataframe into sql and placing into a temporary table',
+                "severity": "INFO",
+                "object": str(object),
+                "table-name": table_name
+            }
+        )
+        df.to_sql(table_name, db, if_exists='replace')
 
         print('Now copying into the real table...')
         logger.log('Copying temp_status into status_history', severity="INFO")
         with db.begin() as cn:
-            sql = text("""INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;""")
+            sql = text("""INSERT INTO status_history SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
         conn.commit()
     except Exception as e:
-        print('Error when getting noteStatusHistoyr:')
+        print('Error when processing noteStatusHistory:')
         print(str(type(e)))
         print(e)
         logger.log_struct(
@@ -279,25 +299,32 @@ def main(event_data, context):
 
     ## Get userEnrollmentStatus ##
     try:
-        logger.log('Retrieving userEnrollmentStatus.tsv', severity="INFO")
         object = file_path + '/userEnrollmentStatus.tsv'
+        table_name = 'temp_enrollment_' + date.today().strftime("%Y%m%d")
         df = retrieve_tsv(object)
         # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
         df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
         print('Now converting dataframe into sql and placing in a temporary table')
-        logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
-        df.to_sql('temp_userenrollment', db, if_exists='replace')
+        logger.log_struct(
+            {
+                "message": 'Now converting dataframe into sql and placing into a temporary table',
+                "severity": "INFO",
+                "object": str(object),
+                "table-name": table_name
+            }
+        )
+        df.to_sql(table_name, db, if_exists='replace')
 
         print('Now copying into the real table...')
         logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
         with db.begin() as cn:
-            sql = text("""INSERT INTO enrollment_status SELECT * FROM temp_userenrollment ON CONFLICT DO NOTHING""")
+            sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
             cn.execute(sql)
         conn.commit()
     except Exception as e:
-        print('Error when getting userEnrollmentStatus:')
+        print('Error when processing userEnrollmentStatus:')
         print(str(type(e)))
         print(e)
         logger.log_struct(
