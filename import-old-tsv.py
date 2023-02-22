@@ -145,7 +145,12 @@ def main(event_data, context):
         file_path = current_date
 
         ## Get notes ##
-        logger.log('Retrieving notes.tsv', severity="INFO")
+        logger.log_struct(
+            {
+                "message": "Retrieving notes.tsv",
+                "severity": "INFO",
+                "current-date": str(file_path)
+            })
         object = file_path + '/notes.tsv'
         try:
             conn.close()
@@ -205,7 +210,12 @@ def main(event_data, context):
         # conn.commit()
 
         ## Get ratings ##
-        logger.log('Retrieving ratings.tsv', severity="INFO")
+        logger.log_struct(
+            {
+                "message": "Retrieving ratings.tsv",
+                "severity": "INFO",
+                "current-date": str(file_path)
+            })
         object = file_path + '/ratings.tsv'
         print(f'Searching for {object}')
         try:
@@ -248,7 +258,12 @@ def main(event_data, context):
             quit()
 
         ## Get noteStatusHistory ##
-        logger.log('Retrieving noteStatusHistory.tsv', severity="INFO")
+        logger.log_struct(
+            {
+                "message": "Retrieving noteStatusHistory.tsv",
+                "severity": "INFO",
+                "current-date": str(file_path)
+            })
         object = file_path + '/noteStatusHistory.tsv'
         print(f'Searching for {object}')
         try:
@@ -292,7 +307,12 @@ def main(event_data, context):
             quit()
 
         ## Get userEnrollmentStatus ##
-        logger.log('Retrieving userEnrollmentStatus.tsv', severity="INFO")
+        logger.log_struct(
+            {
+                "message": "Retrieving userEnrollmentStatus.tsv",
+                "severity": "INFO",
+                "current-date": str(file_path)
+            })
         object = file_path + '/userEnrollmentStatus.tsv'
         try:
             df = retrieve_tsv(object)
