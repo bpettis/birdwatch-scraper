@@ -4,7 +4,7 @@ from datetime import date
 from sqlalchemy import create_engine, text
 from google.cloud.sql.connector import Connector, IPTypes
 from datetime import datetime, date, timedelta
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 import os, sqlalchemy, pg8000
 import google.cloud.logging
 
@@ -19,6 +19,7 @@ import google.cloud.logging
 
 
 # set up some global variables:
+load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 start_date = date(2023, 2, 19)
