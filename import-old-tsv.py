@@ -159,6 +159,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/notes.tsv'
+        table_name = 'temp_notes_' + date.today().strftime("%Y%m%d")
         try:
             conn.close()
             # Using a with statement ensures that the connection is always released
@@ -176,13 +177,39 @@ def main(event_data, context):
             print(df)
 
             # # Insert data from that file into the db:
-            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
-            df.to_sql('temp_notes', db, if_exists='replace')
+            logger.log_struct(
+                {
+                    "message": 'Now converting dataframe into sql and placing into a temporary table',
+                    "severity": "INFO",
+                    "object": str(object),
+                    "table-name": table_name
+                }
+            )
+            df.to_sql(table_name, db, if_exists='replace')
             logger.log('Copying temp_notes into the notes table', severity="INFO")
             print('Now copying into the real table...')
             with db.begin() as cn:
-                sql = text("""INSERT INTO notes SELECT * FROM temp_notes ON CONFLICT DO NOTHING;""")
+                sql = text("""INSERT INTO notes SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
                 cn.execute(sql)
+            try:
+                cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+                logger.log_struct(
+                    {
+                        "message": 'Dropped temporary table',
+                        "severity": 'INFO',
+                        "table-name": table_name
+                    }
+                )
+            except Exception as e:
+                print('Unable to drop a temp table. Does it actually exist?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Error when dropping temp_notes",
+                        "severity": "WARNING",
+                        "table-name": table_name,
+                        "exception": str(type(e))
+                    })
             conn.commit()
         except Exception as e:
             print('Error when getting notes:')
@@ -224,21 +251,48 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/ratings.tsv'
+        table_name = 'temp_ratings_' + date.today().strftime("%Y%m%d")
         print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
             df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
             print(df.info())
             print(df)
-            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
+            logger.log_struct(
+                {
+                    "message": 'Now converting dataframe into sql and placing into a temporary table',
+                    "severity": "INFO",
+                    "object": str(object),
+                    "table-name": table_name
+                }
+            )
             print('Now converting dataframe into sql and placing into a temporary table')
-            df.to_sql('temp_ratings', db, if_exists='replace')
+            df.to_sql(table_name, db, if_exists='replace')
             logger.log('Copying temp_ratings into ratings', severity="INFO")
 
             print('Now copying into the real table...')
             with db.begin() as cn:
-                sql = text("""INSERT INTO ratings SELECT * FROM temp_ratings ON CONFLICT DO NOTHING;""")
+                sql = text("""INSERT INTO ratings SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
                 cn.execute(sql)
+            try:
+                cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+                logger.log_struct(
+                    {
+                        "message": 'Dropped temporary table',
+                        "severity": 'INFO',
+                        "table-name": table_name
+                    }
+                )
+            except Exception as e:
+                print('Unable to drop a temp table. Does it actually exist?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Error when dropping temp_notes",
+                        "severity": "WARNING",
+                        "table-name": table_name,
+                        "exception": str(type(e))
+                    })
             conn.commit()
         except Exception as e:
             print('Error when getting ratings:')
@@ -272,20 +326,47 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/noteStatusHistory.tsv'
+        table_name = 'temp_status_' + date.today().strftime("%Y%m%d")
         print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
             df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
             print(df.info())
             print(df)
-            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
+            logger.log_struct(
+                {
+                    "message": 'Now converting dataframe into sql and placing into a temporary table',
+                    "severity": "INFO",
+                    "object": str(object),
+                    "table-name": table_name
+                }
+            )
             print('Now converting dataframe into sql and placing in a temporary table')
-            df.to_sql('temp_status', db, if_exists='replace')
+            df.to_sql(table_name, db, if_exists='replace')
             logger.log('Copying temp_status into status_history', severity="INFO")
             print('Now copying into the real table...')
             with db.begin() as cn:
-                sql = text("""INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;""")
+                sql = text("""INSERT INTO status_history SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
                 cn.execute(sql)
+            try:
+                cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+                logger.log_struct(
+                    {
+                        "message": 'Dropped temporary table',
+                        "severity": 'INFO',
+                        "table-name": table_name
+                    }
+                )
+            except Exception as e:
+                print('Unable to drop a temp table. Does it actually exist?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Error when dropping temp_notes",
+                        "severity": "WARNING",
+                        "table-name": table_name,
+                        "exception": str(type(e))
+                    })
             conn.commit()
 
         except Exception as e:
@@ -321,6 +402,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/userEnrollmentStatus.tsv'
+        table_name = 'temp_enrollment_' + date.today().strftime("%Y%m%d")
         try:
             df = retrieve_tsv(object)
             # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
@@ -328,21 +410,30 @@ def main(event_data, context):
             print(df.info())
             print(df)
             print('Now converting dataframe into sql and placing in a temporary table')
-            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
-            df.to_sql('temp_userenrollment', db, if_exists='replace')
+            logger.log_struct(
+                {
+                    "message": 'Now converting dataframe into sql and placing into a temporary table',
+                    "severity": "INFO",
+                    "object": str(object),
+                    "table-name": table_name
+                }
+            )
+            df.to_sql(table_name, db, if_exists='replace')
 
             print('Now copying into the real table...')
             logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
             with db.begin() as cn:
-                sql = text("""INSERT INTO enrollment_status SELECT * FROM temp_userenrollment ON CONFLICT DO NOTHING""")
+                sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
                 cn.execute(sql)
-            conn.commit()
-
-            # Clean up temp tables
-            print('Now deleting temporary tables!')
             try:
-                cur.execute("""DROP TABLE temp_notes CASCADE;""");
-                logger.log("temp_notes dropped", severity="INFO")
+                cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+                logger.log_struct(
+                    {
+                        "message": 'Dropped temporary table',
+                        "severity": 'INFO',
+                        "table-name": table_name
+                    }
+                )
             except Exception as e:
                 print('Unable to drop a temp table. Does it actually exist?')
                 print(str(type(e)))
@@ -350,62 +441,10 @@ def main(event_data, context):
                     {
                         "message": "Error when dropping temp_notes",
                         "severity": "WARNING",
+                        "table-name": table_name,
                         "exception": str(type(e))
                     })
-
-            try:
-                cur.execute("""DROP TABLE temp_ratings CASCADE;""");
-                logger.log("temp_ratings dropped", severity="INFO")
-            except Exception as e:
-                print('Unable to drop a temp table. Does it actually exist?')
-                print(str(type(e)))
-                logger.log_struct(
-                    {
-                        "message": "Error when dropping temp_ratings",
-                        "severity": "WARNING",
-                        "exception": str(type(e))
-                    })
-
-            try:
-                cur.execute("""DROP TABLE temp_status CASCADE;""");
-                logger.log("temp_status dropped", severity="INFO")
-            except Exception as e:
-                print('Unable to drop a temp table. Does it actually exist?')
-                print(str(type(e)))
-                logger.log_struct(
-                    {
-                        "message": "Error when dropping temp_status",
-                        "severity": "WARNING",
-                        "exception": str(type(e))
-                    })
-
-            try:
-                cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
-                logger.log("temp_userenrollment dropped", severity="INFO")
-            except Exception as e:
-                print('Unable to drop a temp table. Does it actually exist?')
-                print(str(type(e)))
-                logger.log_struct(
-                    {
-                        "message": "Error when dropping temp_userenrollment",
-                        "severity": "WARNING",
-                        "exception": str(type(e))
-                    })
-
-            
-            try:
-                conn.commit()
-            except Exception as e:
-                print('Unable to commit SQL changes. Was anything actually changed?')
-                print(str(type(e)))
-                logger.log_struct(
-                    {
-                        "message": "Unable to commit SQL changes. Was anything actually changed?",
-                        "severity": "ERROR",
-                        "exception": str(type(e))
-                    })
-
-
+            conn.commit()
         except Exception as e:
             print('Error when getting enrollment_status:')
             print(str(type(e)))
@@ -418,7 +457,20 @@ def main(event_data, context):
                 })
 
             
-
+        print('Attempting to Commit any lingering SQL changes')
+        logger.log('Attempting to Commit any lingering SQL changes', severity="INFO")
+        try:
+            conn.commit()
+        except Exception as e:
+            print('Unable to commit SQL changes. Was anything actually changed?')
+            print(str(type(e)))
+            logger.log_struct(
+                {
+                    "message": "Unable to commit SQL changes. Was anything actually changed?",
+                    "severity": "WARNING",
+                    "exception": str(type(e))
+                })
+                
         # close the db connection
         conn.close()
         print(f'Finished importing data from {current_date}')
