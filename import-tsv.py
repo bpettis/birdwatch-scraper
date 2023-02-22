@@ -387,6 +387,9 @@ def main(event_data, context):
                 "severity": "WARNING",
                 "exception": str(type(e))
             })
+    
+    print('Attempting to Commit SQL changes')
+    logger.log('Attempting to Commit SQL changes', severity="INFO")
     try:
         conn.commit()
     except Exception as e:
@@ -401,6 +404,8 @@ def main(event_data, context):
 
 
     # close the db connection
+    print('Closing the connection')
+    logger.log('Closing the db connection', severity="INFO")
     conn.close()
 
 
