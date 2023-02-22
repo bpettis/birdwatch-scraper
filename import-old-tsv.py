@@ -342,19 +342,57 @@ def main(event_data, context):
             print('Now deleting temporary tables!')
             try:
                 cur.execute("""DROP TABLE temp_notes CASCADE;""");
-                cur.execute("""DROP TABLE temp_ratings CASCADE;""");
-                cur.execute("""DROP TABLE temp_status CASCADE;""");
-                cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
-                logger.log("Temporary tables dropped", severity="INFO")
+                logger.log("temp_notes dropped", severity="INFO")
             except Exception as e:
                 print('Unable to drop a temp table. Does it actually exist?')
                 print(str(type(e)))
                 logger.log_struct(
                     {
-                        "message": "Error when dropping the the temporary tables",
+                        "message": "Error when dropping temp_notes",
                         "severity": "WARNING",
                         "exception": str(type(e))
                     })
+
+            try:
+                cur.execute("""DROP TABLE temp_ratings CASCADE;""");
+                logger.log("temp_ratings dropped", severity="INFO")
+            except Exception as e:
+                print('Unable to drop a temp table. Does it actually exist?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Error when dropping temp_ratings",
+                        "severity": "WARNING",
+                        "exception": str(type(e))
+                    })
+
+            try:
+                cur.execute("""DROP TABLE temp_status CASCADE;""");
+                logger.log("temp_status dropped", severity="INFO")
+            except Exception as e:
+                print('Unable to drop a temp table. Does it actually exist?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Error when dropping temp_status",
+                        "severity": "WARNING",
+                        "exception": str(type(e))
+                    })
+
+            try:
+                cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
+                logger.log("temp_userenrollment dropped", severity="INFO")
+            except Exception as e:
+                print('Unable to drop a temp table. Does it actually exist?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Error when dropping temp_userenrollment",
+                        "severity": "WARNING",
+                        "exception": str(type(e))
+                    })
+
+            
             try:
                 conn.commit()
             except Exception as e:
