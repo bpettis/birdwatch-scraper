@@ -260,8 +260,8 @@ def main(event_data, context):
             logger.log('Copying temp_status into status_history', severity="INFO")
             print('Now copying into the real table...')
             with db.begin() as cn:
-            sql = text("""INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;""")
-            cn.execute(sql)
+                sql = text("""INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;""")
+                cn.execute(sql)
             conn.commit()
 
         except Exception as e:
