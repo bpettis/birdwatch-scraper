@@ -1,11 +1,12 @@
 from google.cloud import storage
 import pandas as pd
 from datetime import date
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from google.cloud.sql.connector import Connector, IPTypes
 from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
 import os, sqlalchemy, pg8000
+import google.cloud.logging
 
 # REQUIREMENTS
 #
@@ -20,9 +21,13 @@ import os, sqlalchemy, pg8000
 # set up some global variables:
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
-start_date = date(2023, 2, 8)
+start_date = date(2023, 2, 19)
 end_date = date.today()
 dates_list = []
+
+# Set up Google cloud logging:
+log_client = google.cloud.logging.Client(project=project_id)
+logger = log_client.logger(name='import-old-tsv')
 
 # [START cloud_sql_postgres_sqlalchemy_connect_connector]
 # From https://github.com/GoogleCloudPlatform/python-docs-samples/blob/main/cloud-sql/postgres/sqlalchemy/connect_connector.py
@@ -116,8 +121,15 @@ def main(event_data, context):
         conn = db.raw_connection()
         cur = conn.cursor()
         print('db connection seems to have worked')
-    except:
+        logger.log('Database Connection was successful')
+    except Exception as e:
         print('db connection failure')
+        logger.log_struct(
+            {
+                "message": "Database Connection Failure",
+                "severity": "ERROR",
+                "exception": str(type(e))
+            })
         quit()
 
     
@@ -130,6 +142,7 @@ def main(event_data, context):
         file_path = current_date
 
         ## Get notes ##
+        logger.log('Retrieving notes.tsv', severity="INFO")
         object = file_path + '/notes.tsv'
         try:
             conn.close()
@@ -148,19 +161,24 @@ def main(event_data, context):
             print(df)
 
             # # Insert data from that file into the db:
-            print('Now converting dataframe into sql and placing into a temporary table')
+            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
             df.to_sql('temp_notes', db, if_exists='replace')
-
+            logger.log('Copying temp_notes into the notes table', severity="INFO")
             print('Now copying into the real table...')
             with db.begin() as cn:
-                sql = """INSERT INTO notes
-                        SELECT *
-                        FROM temp_notes
-                        ON CONFLICT DO NOTHING"""
+                sql = text("""INSERT INTO notes SELECT * FROM temp_notes ON CONFLICT DO NOTHING;""")
                 cn.execute(sql)
             conn.commit()
-        except:
-            print('Unable to find that TSV file. Skipping')
+        except Exception as e:
+            print('Error when getting notes:')
+            print(str(type(e)))
+            print(e)
+            logger.log_struct(
+                {
+                    "message": "Error when retreiving notes.tsv",
+                    "severity": "WARNING",
+                    "exception": str(type(e))
+                })
 
 
         print('Done! Now refreshing the db connection...')
@@ -184,6 +202,7 @@ def main(event_data, context):
         # conn.commit()
 
         ## Get ratings ##
+        logger.log('Retrieving ratings.tsv', severity="INFO")
         object = file_path + '/ratings.tsv'
         print(f'Searching for {object}')
         try:
@@ -191,19 +210,26 @@ def main(event_data, context):
             df['ratingsId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
             print(df.info())
             print(df)
+            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
             print('Now converting dataframe into sql and placing into a temporary table')
             df.to_sql('temp_ratings', db, if_exists='replace')
+            logger.log('Copying temp_ratings into ratings', severity="INFO")
 
             print('Now copying into the real table...')
             with db.begin() as cn:
-                sql = """INSERT INTO ratings
-                        SELECT *
-                        FROM temp_ratings
-                        ON CONFLICT DO NOTHING"""
+                sql = text("""INSERT INTO ratings SELECT * FROM temp_ratings ON CONFLICT DO NOTHING;""")
                 cn.execute(sql)
             conn.commit()
-        except:
-            print('Unable to find that TSV file. Skipping')
+        except Exception as e:
+            print('Error when getting ratings:')
+            print(str(type(e)))
+            print(e)
+            logger.log_struct(
+                {
+                    "message": "Error when retreiving ratings.tsv",
+                    "severity": "WARNING",
+                    "exception": str(type(e))
+                })
 
 
         print('Done! Now refreshing the db connection...')
@@ -219,6 +245,7 @@ def main(event_data, context):
             quit()
 
         ## Get noteStatusHistory ##
+        logger.log('Retrieving noteStatusHistory.tsv', severity="INFO")
         object = file_path + '/noteStatusHistory.tsv'
         print(f'Searching for {object}')
         try:
@@ -226,21 +253,26 @@ def main(event_data, context):
             df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
             print(df.info())
             print(df)
-
+            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
             print('Now converting dataframe into sql and placing in a temporary table')
             df.to_sql('temp_status', db, if_exists='replace')
-
+            logger.log('Copying temp_status into status_history', severity="INFO")
             print('Now copying into the real table...')
             with db.begin() as cn:
-                sql = """INSERT INTO status_history
-                        SELECT *
-                        FROM temp_status
-                        ON CONFLICT DO NOTHING"""
-                cn.execute(sql)
+            sql = text("""INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;""")
+            cn.execute(sql)
             conn.commit()
 
-        except:
-            print('Unable to find that TSV file. Skipping')
+        except Exception as e:
+            print('Error when getting noteStatusHisotyr:')
+            print(str(type(e)))
+            print(e)
+            logger.log_struct(
+                {
+                    "message": "Error when retreiving notesStatusHistory.tsv",
+                    "severity": "WARNING",
+                    "exception": str(type(e))
+                })
             
         
 
@@ -257,6 +289,7 @@ def main(event_data, context):
             quit()
 
         ## Get userEnrollmentStatus ##
+        logger.log('Retrieving userEnrollmentStatus.tsv', severity="INFO")
         object = file_path + '/userEnrollmentStatus.tsv'
         try:
             df = retrieve_tsv(object)
@@ -265,25 +298,56 @@ def main(event_data, context):
             print(df.info())
             print(df)
             print('Now converting dataframe into sql and placing in a temporary table')
+            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
             df.to_sql('temp_userenrollment', db, if_exists='replace')
 
             print('Now copying into the real table...')
+            logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
             with db.begin() as cn:
-                sql = """INSERT INTO enrollment_status
-                        SELECT *
-                        FROM temp_userenrollment
-                        ON CONFLICT DO NOTHING"""
+                sql = text("""INSERT INTO enrollment_status SELECT * FROM temp_userenrollment ON CONFLICT DO NOTHING""")
                 cn.execute(sql)
             conn.commit()
+
             # Clean up temp tables
             print('Now deleting temporary tables!')
-            cur.execute("""DROP TABLE temp_notes CASCADE;""");
-            cur.execute("""DROP TABLE temp_ratings CASCADE;""");
-            cur.execute("""DROP TABLE temp_status CASCADE;""");
-            cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
-            conn.commit()
-        except:
-            print(f'Retrieving {object} failed. Skipping.')
+            try:
+                cur.execute("""DROP TABLE temp_notes CASCADE;""");
+                cur.execute("""DROP TABLE temp_ratings CASCADE;""");
+                cur.execute("""DROP TABLE temp_status CASCADE;""");
+                cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
+                logger.log("Temporary tables dropped", severity="INFO")
+            except Exception as e:
+                print('Unable to drop a temp table. Does it actually exist?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Error when dropping the the temporary tables",
+                        "severity": "WARNING",
+                        "exception": str(type(e))
+                    })
+            try:
+                conn.commit()
+            except Exception as e:
+                print('Unable to commit SQL changes. Was anything actually changed?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Unable to commit SQL changes. Was anything actually changed?",
+                        "severity": "ERROR",
+                        "exception": str(type(e))
+                    })
+
+
+        except Exception as e:
+            print('Error when getting enrollment_status:')
+            print(str(type(e)))
+            print(e)
+            logger.log_struct(
+                {
+                    "message": "Error when retreiving enrollmentStatus.tsv",
+                    "severity": "WARNING",
+                    "exception": str(type(e))
+                })
 
             
 
@@ -298,8 +362,20 @@ def main(event_data, context):
 if __name__ == "__main__":
     start_time = datetime.now()
     print('FYI: Script started directly as __main__')
-    
+    logger.log('Script Execution Started - import-old-tsv.py', severity="INFO")
+    logger.log_struct(
+            {
+                "message": "Script Execution Started - import-old-tsv.py",
+                "severity": "INFO",
+                "start-date": str(start_date)
+            })
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
     end_time = datetime.now()
     total_time = end_time - start_time
     print(f'Total execution was: {total_time}')
+    logger.log_struct(
+            {
+                "message": "Script Execution Finihed - import-old-tsv.py",
+                "severity": "INFO",
+                "total-time": str(total_time)
+            })
