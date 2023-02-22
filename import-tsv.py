@@ -169,6 +169,26 @@ def main(event_data, context):
         with db.begin() as cn:
             sql = text("""INSERT INTO notes SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
+
+        try:
+            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            logger.log_struct(
+                {
+                    "message": 'Dropped temporary table',
+                    "severity": 'INFO',
+                    "table-name": table_name
+                }
+            )
+        except Exception as e:
+            print('Unable to drop a temp table. Does it actually exist?')
+            print(str(type(e)))
+            logger.log_struct(
+                {
+                    "message": "Error when dropping temp_notes",
+                    "severity": "WARNING",
+                    "table-name": table_name,
+                    "exception": str(type(e))
+                })
         conn.commit()
     except Exception as e:
         print('Error when processing notes:')
@@ -180,6 +200,7 @@ def main(event_data, context):
                 "severity": "WARNING",
                 "exception": str(type(e))
             })
+
 
     print('Done! Now refreshing the db connection...')
     try:
@@ -194,12 +215,6 @@ def main(event_data, context):
         quit()
     
 
-    # print('Now inserting data from table_temp into notes - and skipping duplicates')
-    # cur.execute("""Insert into notes select * From table_temp ON CONFLICT DO NOTHING;""");
-
-    # print('Now dropping the temporary table')
-    # cur.execute("""DROP TABLE table_temp CASCADE;""");  # You can drop if you want to but the replace option in to_sql will drop and recreate the table
-    # conn.commit()
 
     ## Get ratings ##
     try:
@@ -225,6 +240,25 @@ def main(event_data, context):
         with db.begin() as cn:
             sql = text("""INSERT INTO ratings SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
+        try:
+            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            logger.log_struct(
+                {
+                    "message": 'Dropped temporary table',
+                    "severity": 'INFO',
+                    "table-name": table_name
+                }
+            )
+        except Exception as e:
+            print('Unable to drop a temp table. Does it actually exist?')
+            print(str(type(e)))
+            logger.log_struct(
+                {
+                    "message": "Error when dropping temp_ratings",
+                    "severity": "WARNING",
+                    "table-name": table_name,
+                    "exception": str(type(e))
+                })
         conn.commit()
     except Exception as e:
         print('Error when getting ratings:')
@@ -273,6 +307,25 @@ def main(event_data, context):
         with db.begin() as cn:
             sql = text("""INSERT INTO status_history SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
+        try:
+            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            logger.log_struct(
+                {
+                    "message": 'Dropped temporary table',
+                    "severity": 'INFO',
+                    "table-name": table_name
+                }
+            )
+        except Exception as e:
+            print('Unable to drop a temp table. Does it actually exist?')
+            print(str(type(e)))
+            logger.log_struct(
+                {
+                    "message": "Error when dropping temp_status",
+                    "severity": "WARNING",
+                    "table-name": table_name,
+                    "exception": str(type(e))
+                })
         conn.commit()
     except Exception as e:
         print('Error when processing noteStatusHistory:')
@@ -322,6 +375,25 @@ def main(event_data, context):
         with db.begin() as cn:
             sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
             cn.execute(sql)
+        try:
+            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            logger.log_struct(
+                {
+                    "message": 'Dropped temporary table',
+                    "severity": 'INFO',
+                    "table-name": table_name
+                }
+            )
+        except Exception as e:
+            print('Unable to drop a temp table. Does it actually exist?')
+            print(str(type(e)))
+            logger.log_struct(
+                {
+                    "message": "Error when dropping temp_enrollment",
+                    "severity": "WARNING",
+                    "table-name": table_name,
+                    "exception": str(type(e))
+                })
         conn.commit()
     except Exception as e:
         print('Error when processing userEnrollmentStatus:')
@@ -334,62 +406,9 @@ def main(event_data, context):
                 "exception": str(type(e))
             })
 
-    # Clean up temp tables
-    print('Now deleting temporary tables!')
-    try:
-        cur.execute("""DROP TABLE temp_notes CASCADE;""");
-        logger.log("temp_notes dropped", severity="INFO")
-    except Exception as e:
-        print('Unable to drop a temp table. Does it actually exist?')
-        print(str(type(e)))
-        logger.log_struct(
-            {
-                "message": "Error when dropping temp_notes",
-                "severity": "WARNING",
-                "exception": str(type(e))
-            })
-
-    try:
-        cur.execute("""DROP TABLE temp_ratings CASCADE;""");
-        logger.log("temp_ratings dropped", severity="INFO")
-    except Exception as e:
-        print('Unable to drop a temp table. Does it actually exist?')
-        print(str(type(e)))
-        logger.log_struct(
-            {
-                "message": "Error when dropping temp_ratings",
-                "severity": "WARNING",
-                "exception": str(type(e))
-            })
-
-    try:
-        cur.execute("""DROP TABLE temp_status CASCADE;""");
-        logger.log("temp_status dropped", severity="INFO")
-    except Exception as e:
-        print('Unable to drop a temp table. Does it actually exist?')
-        print(str(type(e)))
-        logger.log_struct(
-            {
-                "message": "Error when dropping temp_status",
-                "severity": "WARNING",
-                "exception": str(type(e))
-            })
-
-    try:
-        cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
-        logger.log("temp_userenrollment dropped", severity="INFO")
-    except Exception as e:
-        print('Unable to drop a temp table. Does it actually exist?')
-        print(str(type(e)))
-        logger.log_struct(
-            {
-                "message": "Error when dropping temp_userenrollment",
-                "severity": "WARNING",
-                "exception": str(type(e))
-            })
     
-    print('Attempting to Commit SQL changes')
-    logger.log('Attempting to Commit SQL changes', severity="INFO")
+    print('Attempting to Commit any lingering SQL changes')
+    logger.log('Attempting to Commit any lingering SQL changes', severity="INFO")
     try:
         conn.commit()
     except Exception as e:
@@ -398,7 +417,7 @@ def main(event_data, context):
         logger.log_struct(
             {
                 "message": "Unable to commit SQL changes. Was anything actually changed?",
-                "severity": "ERROR",
+                "severity": "WARNING",
                 "exception": str(type(e))
             })
 
@@ -415,9 +434,9 @@ def main(event_data, context):
 if __name__ == "__main__":
     start_time = datetime.now()
     print('FYI: Script started directly as __main__')
-    logger.log('Script Execution Started - import-tsv.py', severity="INFO")
+    logger.log('Script Execution Started - import-tsv.py', severity="NOTICE")
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
     end_time = datetime.now()
     total_time = end_time - start_time
     print(f'Total execution was: {total_time}')
-    logger.log('Script execution finished', severity="INFO")
+    logger.log('Script execution finished', severity="NOTICE")
