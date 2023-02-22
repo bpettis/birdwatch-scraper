@@ -112,7 +112,7 @@ def retrieve_tsv(object):
 def main(event_data, context):
     # We have to include event_data and context because these will be passed as arguments when invoked as a Cloud Function
     # and the runtime will freak out if the function only accepts 0 arguments... go figure
-    print('Started Execution')
+    print(f'Started Execution, with an initial date of: {start_date}')
     load_dotenv() # load environment variables
     
     # Set up a db connection pool
