@@ -242,7 +242,7 @@ def main(event_data, context):
         df.to_sql('temp_status', db, if_exists='replace')
 
         print('Now copying into the real table...')
-        logger.log('Retrieving temp_status into status_history', severity="INFO")
+        logger.log('Copying temp_status into status_history', severity="INFO")
         with db.begin() as cn:
             sql = text("""INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;""")
             cn.execute(sql)
@@ -307,7 +307,7 @@ def main(event_data, context):
         cur.execute("""DROP TABLE temp_ratings CASCADE;""");
         cur.execute("""DROP TABLE temp_status CASCADE;""");
         cur.execute("""DROP TABLE temp_userenrollment CASCADE;""");
-        logger.log("Tempotary tables dropped", severity="INFO")
+        logger.log("Temporary tables dropped", severity="INFO")
     except Exception as e:
         print('Unable to drop a temp table. Does it actually exist?')
         print(str(type(e)))
@@ -340,7 +340,7 @@ def main(event_data, context):
 if __name__ == "__main__":
     start_time = datetime.now()
     print('FYI: Script started directly as __main__')
-    logger.log('Script Execution Started', severity="INFO")
+    logger.log('Script Execution Started - import-tsv.py', severity="INFO")
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
     end_time = datetime.now()
     total_time = end_time - start_time
