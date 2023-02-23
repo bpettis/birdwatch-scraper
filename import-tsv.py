@@ -143,7 +143,7 @@ def main(event_data, context):
 
     # Get the most recent downloaded file
     #   (with error handling for if a file is missing for whatever reason)
-    file_path = date.today().strftime("%Y/%m/%d")
+    file_path = os.environ.get("DATE_OVERRIDE", date.today().strftime("%Y/%m/%d"))
 
     ## Get notes ##
     try:
