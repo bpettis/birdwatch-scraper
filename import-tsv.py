@@ -501,7 +501,8 @@ if __name__ == "__main__":
         {
             "message": "Script Execution Started - import-tsv.py",
             "severity": "NOTICE",
-            "hostname": str(socket.gethostname())
+            "hostname": str(socket.gethostname()),
+            "parsing-files-from": start_date
         })
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
     end_time = datetime.now()
