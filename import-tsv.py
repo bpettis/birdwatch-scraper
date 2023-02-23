@@ -155,9 +155,9 @@ def main(event_data, context):
         df = retrieve_tsv(object)
         print(df.info())
         print(df)
-        # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
-        drop = int(size * 0.75)
+        drop = int(size * 0.9)
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
@@ -242,9 +242,9 @@ def main(event_data, context):
         df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
-        # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
-        drop = int(size * 0.75)
+        drop = int(size * 0.9)
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
@@ -324,9 +324,9 @@ def main(event_data, context):
         df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
-        # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
-        drop = int(size * 0.75)
+        drop = int(size * 0.9)
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
@@ -407,9 +407,9 @@ def main(event_data, context):
         df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
-        # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
-        drop = int(size * 0.75)
+        drop = int(size * 0.9)
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
