@@ -161,7 +161,7 @@ def main(event_data, context):
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(df.size),
+                "new-size": str(df.shape[0]),
                 "severity": 'INFO',
             }
         )
@@ -248,7 +248,7 @@ def main(event_data, context):
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(df.size),
+                "new-size": str(df.shape[0]),
                 "severity": 'INFO',
             }
         )
@@ -330,7 +330,7 @@ def main(event_data, context):
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(df.size),
+                "new-size": str(df.shape[0]),
                 "severity": 'INFO',
             }
         )
@@ -413,7 +413,7 @@ def main(event_data, context):
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(df.size),
+                "new-size": str(df.shape[0]),
                 "severity": 'INFO',
             }
         )
