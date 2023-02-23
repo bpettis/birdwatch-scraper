@@ -6,7 +6,7 @@ from google.cloud.sql.connector import Connector, IPTypes
 import google.cloud.logging
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
-import os, sqlalchemy, pg8000
+import os, sqlalchemy, pg8000, socket
 
 # REQUIREMENTS
 #
@@ -494,9 +494,21 @@ def main(event_data, context):
 if __name__ == "__main__":
     start_time = datetime.now()
     print('FYI: Script started directly as __main__')
-    logger.log('Script Execution Started - import-tsv.py', severity="NOTICE")
+    logger.log_struct(
+        {
+            "message": "Script Execution Started - import-tsv.py",
+            "severity": "NOTICE",
+            "hostname": str(socket.gethostname())
+        })
     main('foo', 'bar') # see note in main() for why we have these filler variables that aren't actually doing anything...
     end_time = datetime.now()
     total_time = end_time - start_time
     print(f'Total execution was: {total_time}')
     logger.log('Script execution finished', severity="NOTICE")
+    logger.log_struct(
+        {
+            "message": "Script Execution finished - import-tsv.py",
+            "severity": "INFO",
+            "total-time": str(total_time),
+            "hostname": str(socket.gethostname())
+        })
