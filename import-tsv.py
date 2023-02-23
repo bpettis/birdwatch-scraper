@@ -23,6 +23,8 @@ load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 log_name = os.environ.get("LOG_ID")
+start_date = date.today().strftime("%Y%m%d")
+
 
 # Set up Google cloud logging:
 log_client = google.cloud.logging.Client(project=project_id)
@@ -148,7 +150,7 @@ def main(event_data, context):
     ## Get notes ##
     try:
         object = file_path + '/notes.tsv'
-        table_name = 'temp_notes_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_notes_' + start_date
         df = retrieve_tsv(object)
         print(df.info())
         print(df)
@@ -234,7 +236,7 @@ def main(event_data, context):
     ## Get ratings ##
     try:
         object = file_path + '/ratings.tsv'
-        table_name = 'temp_ratings_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_ratings_' + start_date
         df = retrieve_tsv(object)
         df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
@@ -316,7 +318,7 @@ def main(event_data, context):
     ## Get noteStatusHistory ##
     try:
         object = file_path + '/noteStatusHistory.tsv'
-        table_name = 'temp_status_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_status_' + start_date
         df = retrieve_tsv(object)
         df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
@@ -398,7 +400,7 @@ def main(event_data, context):
     ## Get userEnrollmentStatus ##
     try:
         object = file_path + '/userEnrollmentStatus.tsv'
-        table_name = 'temp_enrollment_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_enrollment_' + start_date
         df = retrieve_tsv(object)
         # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
         df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
