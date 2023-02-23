@@ -165,7 +165,8 @@ def main(event_data, context):
                 "severity": 'INFO',
             }
         )
-
+        print("***")
+        print(df)
         # # Insert data from that file into the db:
         print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
         logger.log_struct(
@@ -251,6 +252,8 @@ def main(event_data, context):
                 "severity": 'INFO',
             }
         )
+        print("***")
+        print(df)
         print('Now converting dataframe into sql and placing into a temporary table')
         logger.log_struct(
             {
@@ -331,6 +334,8 @@ def main(event_data, context):
                 "severity": 'INFO',
             }
         )
+        print("***")
+        print(df)
         print('Now converting dataframe into sql and placing in a temporary table')
         logger.log_struct(
             {
@@ -412,6 +417,8 @@ def main(event_data, context):
                 "severity": 'INFO',
             }
         )
+        print("***")
+        print(df)
         print('Now converting dataframe into sql and placing in a temporary table')
         logger.log_struct(
             {
