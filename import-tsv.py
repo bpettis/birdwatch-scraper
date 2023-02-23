@@ -23,7 +23,7 @@ load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 log_name = os.environ.get("LOG_ID")
-start_date = os.environ.get("DATE_OVERRIDE", date.today().strftime("%Y%m%d"))
+start_date = os.environ.get("DATE_OVERRIDE", date.today().strftime("%Y%m%d")).replace("/", "") # Get the DATE_OVERRIDE environment variable, or use today's date if not present. If the environment variable has forward slashes, remove those.
 
 
 
