@@ -153,10 +153,9 @@ def main(event_data, context):
         print(df.info())
         print(df)
         # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.size
+        size = df.shape[0]
         drop = int(size * 0.75)
-        # df.drop(df.tail(drop).index, inplace = True)
-        df = df.iloc[:-drop]
+        df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
@@ -241,10 +240,9 @@ def main(event_data, context):
         print(df.info())
         print(df)
         # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.size
+        size = df.shape[0]
         drop = int(size * 0.75)
-        # df.drop(df.tail(drop).index, inplace = True)
-        df = df.iloc[:-drop]
+        df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
@@ -324,10 +322,9 @@ def main(event_data, context):
         print(df.info())
         print(df)
         # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.size
+        size = df.shape[0]
         drop = int(size * 0.75)
-        # df.drop(df.tail(drop).index, inplace = True)
-        df = df.iloc[:-drop]
+        df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
@@ -408,10 +405,9 @@ def main(event_data, context):
         print(df.info())
         print(df)
         # Only keep the top 25% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.size
+        size = df.shape[0]
         drop = int(size * 0.75)
-        # df.drop(df.tail(drop).index, inplace = True)
-        df = df.iloc[:-drop]
+        df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
