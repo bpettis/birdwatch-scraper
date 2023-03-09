@@ -153,6 +153,7 @@ def main(event_data, context):
         object = file_path + '/notes.tsv'
         table_name = 'temp_notes_' + start_date
         df = retrieve_tsv(object)
+        df.sort_values(by=['createdAtMillis'], ascending=False)
         print(df.info())
         print(df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
@@ -239,6 +240,7 @@ def main(event_data, context):
         object = file_path + '/ratings.tsv'
         table_name = 'temp_ratings_' + start_date
         df = retrieve_tsv(object)
+        df.sort_values(by=['createdAtMillis'], ascending=False)
         df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
@@ -324,6 +326,7 @@ def main(event_data, context):
         df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
+        df.sort_values(by=['createdAtMillis'], ascending=False)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
         drop = int(size * 0.9)
@@ -403,6 +406,7 @@ def main(event_data, context):
         object = file_path + '/userEnrollmentStatus.tsv'
         table_name = 'temp_enrollment_' + start_date
         df = retrieve_tsv(object)
+        df.sort_values(by=['timestampOfLastStateChange'], ascending=False)
         # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
         df['statusId'] = df[['participantId', 'timestampOfLastStateChange']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
