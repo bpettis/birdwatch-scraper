@@ -105,6 +105,13 @@ def connect_with_connector() -> sqlalchemy.engine.base.Engine:
 def retrieve_tsv(object):
     path = 'gs://' + bucket_name + '/' + object
     print(f'Loading {path} into a pandas DataFrame...')
+    logger.log_struct(
+            {
+                "message": "Retrieving TSV and loading into Pandas dataframe",
+                "severity": "INFO",
+                "object": str(object),
+                "gcs-path": str(path)
+            })
     # gs://birdwatch-scraper_public-data/2022/11/12/ratings.tsv
     df = pd.read_csv(path, sep='\t', header=0)
     return df
@@ -248,8 +255,14 @@ def main(event_data, context):
         #     quit()
 
         ## Get noteStatusHistory ##
-        logger.log('Retrieving noteStatusHistory.tsv', severity="INFO")
+        logger.log_struct(
+            {
+                "message": "Retrieving noteStatusHistory.tsv",
+                "severity": "INFO",
+                "current-date": str(file_path)
+            })
         object = file_path + '/noteStatusHistory.tsv'
+        table_name = 'temp_status_' + date.today().strftime("%Y%m%d")
         print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
@@ -263,14 +276,40 @@ def main(event_data, context):
 
             print(df.info())
             print(df)
-            logger.log('Now converting dataframe into sql and placing into a temporary table', severity="INFO")
+            logger.log_struct(
+                {
+                    "message": 'Now converting dataframe into sql and placing into a temporary table',
+                    "severity": "INFO",
+                    "object": str(object),
+                    "table-name": table_name
+                }
+            )
             print('Now converting dataframe into sql and placing in a temporary table')
-            df.to_sql('temp_status', db, if_exists='replace')
+            df.to_sql(table_name, db, if_exists='replace')
             logger.log('Copying temp_status into status_history', severity="INFO")
             print('Now copying into the real table...')
             with db.begin() as cn:
-                sql = text("""INSERT INTO status_history SELECT * FROM temp_status ON CONFLICT DO NOTHING;""")
+                sql = text("""INSERT INTO status_history SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
                 cn.execute(sql)
+            try:
+                cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+                logger.log_struct(
+                    {
+                        "message": 'Dropped temporary table',
+                        "severity": 'INFO',
+                        "table-name": table_name
+                    }
+                )
+            except Exception as e:
+                print('Unable to drop a temp table. Does it actually exist?')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "Error when dropping temp_notes",
+                        "severity": "WARNING",
+                        "table-name": table_name,
+                        "exception": str(type(e))
+                    })
             conn.commit()
 
         except Exception as e:
@@ -360,7 +399,20 @@ def main(event_data, context):
         #         })
 
             
-
+        print('Attempting to Commit any lingering SQL changes')
+        logger.log('Attempting to Commit any lingering SQL changes', severity="INFO")
+        try:
+            conn.commit()
+        except Exception as e:
+            print('Unable to commit SQL changes. Was anything actually changed?')
+            print(str(type(e)))
+            logger.log_struct(
+                {
+                    "message": "Unable to commit SQL changes. Was anything actually changed?",
+                    "severity": "WARNING",
+                    "exception": str(type(e))
+                })
+                
         # close the db connection
         conn.close()
         print(f'Finished importing data from {current_date}')

@@ -63,3 +63,9 @@ Looks like I can only get the last month or so
 - The Dockerfile will build an image that can run the scripts - it relies on having the correct information set in the .env file
 - Permissions for Google Cloud service account
   - you will need to have a 'credentials.json' key file for a service account which has permission to access Cloud SQL as well as permission to write to Google Cloud Logging
+
+Overriding the date:
+
+in `import-old-tsv.py` you can use the `START_DATE` environment variable to set the earliest date that the script should start with, formatted like so: `2023, 2, 19` or `2022, 12, 25`
+
+in `import-tsv.py` you can use the `DATE_OVERRIDE` environment variable to specify a date _other_ than the current system time. This can be useful if trying to do some testing, and there isn't a birdwatch file for the current day. Set this like so: `2023/02/22`
