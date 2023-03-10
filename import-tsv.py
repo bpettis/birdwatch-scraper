@@ -323,7 +323,14 @@ def main(event_data, context):
         object = file_path + '/noteStatusHistory.tsv'
         table_name = 'temp_status_' + start_date
         df = retrieve_tsv(object)
-        df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+        try:
+            df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+        except:
+            try:
+                df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+            except:
+                df['statusId'] = 'IDERROR' + datetime.now().strftime('%s')
+
         print(df.info())
         print(df)
         df.sort_values(by=['createdAtMillis'], ascending=False)
