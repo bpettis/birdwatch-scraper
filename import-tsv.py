@@ -349,6 +349,16 @@ def main(event_data, context):
         )
         print("***")
         print(df)
+
+        # We've been getting some problems with the noteStatusHistory processing:
+        # 
+        # (pg8000.exceptions.DatabaseError) {'S': 'ERROR', 'V': 'ERROR', 'C': '42804', 'M': 'column "timestampMillisOfStatusLock" is of type bigint but expression is of type text', 'H': 'You will need to rewrite or cast the expression.', 'P': '35', 'F': 'parse_target.c', 'L': '595', 'R': 'transformAssignedExpr'}
+        # [SQL: INSERT INTO status_history SELECT * FROM temp_status_20230310 ON CONFLICT DO NOTHING;]
+        # 
+        # So we need to try and take that column and cast it to an int
+        # Looking at a recent TSV file, it looks like many of them have good timestamps, but many have a value of `-1` which is probably messing this up?
+        df['timestampMillisOfStatusLock'] = pd.to_numeric(df['timestampMillisOfStatusLock'], errors='coerce').fillna(0).astype(int)
+
         print('Now converting dataframe into sql and placing in a temporary table')
         logger.log_struct(
             {
