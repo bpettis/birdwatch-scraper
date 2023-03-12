@@ -350,13 +350,7 @@ def main(event_data, context):
         print("***")
         print(df)
 
-        # We've been getting some problems with the noteStatusHistory processing:
-        # 
-        # (pg8000.exceptions.DatabaseError) {'S': 'ERROR', 'V': 'ERROR', 'C': '42804', 'M': 'column "timestampMillisOfStatusLock" is of type bigint but expression is of type text', 'H': 'You will need to rewrite or cast the expression.', 'P': '35', 'F': 'parse_target.c', 'L': '595', 'R': 'transformAssignedExpr'}
-        # [SQL: INSERT INTO status_history SELECT * FROM temp_status_20230310 ON CONFLICT DO NOTHING;]
-        # 
-        # So we need to try and take that column and cast it to an int
-        # Looking at a recent TSV file, it looks like many of them have good timestamps, but many have a value of `-1` which is probably messing this up?
+        # Coax this column into being an actual number, and replace any NaN values with 0
         df['timestampMillisOfStatusLock'] = pd.to_numeric(df['timestampMillisOfStatusLock'], errors='coerce').fillna(0).astype(int)
 
         print('Now converting dataframe into sql and placing in a temporary table')
@@ -370,10 +364,26 @@ def main(event_data, context):
         )
         df.to_sql(table_name, db, if_exists='replace')
 
+        # After moving data to the temporary table, attempt to force the column to be the correct type:
+        with db.begin() as cn:
+            sql = text('ALTER TABLE ' + table_name + ' ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;')
+            print(f'Attempting to run SQL statement: {str(sql)}')
+            logger.log_struct(
+                {
+                    "message": 'Running SQL statement to convert column datatype',
+                    "severity": 'INFO',
+                    "table-name": table_name,
+                    "column-name": 'timestampMillisOfStatusLock',
+                    "sql": str(sql)
+                }
+            )
+            cn.execute(sql)
+
         print('Now copying into the real table...')
         logger.log('Copying temp_status into status_history', severity="INFO")
         with db.begin() as cn:
-            sql = text("""INSERT INTO status_history SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
+            # Manually specify which columns to insert so that we can *force* "timestampMillisOfStatusLock" to be cast as BIGINT when inserting into the primary table
+            sql = text('INSERT INTO status_history ("noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock", "lockedStatus", "timestampMillisOfRetroLock", "statusId") SELECT "noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock"::BIGINT, "lockedStatus", "timestampMillisOfRetroLock", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
             cn.execute(sql)
         try:
             cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
