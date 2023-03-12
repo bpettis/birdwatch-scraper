@@ -338,6 +338,9 @@ def main(event_data, context):
                 except:
                     df['statusId'] = 'IDERROR' + datetime.now().strftime('%s')
 
+            # Coax this column into being an actual number, and replace any NaN values with 0
+            df['timestampMillisOfStatusLock'] = pd.to_numeric(df['timestampMillisOfStatusLock'], errors='coerce').fillna(0).astype(int)
+
             print(df.info())
             print(df)
             logger.log_struct(
@@ -350,10 +353,28 @@ def main(event_data, context):
             )
             print('Now converting dataframe into sql and placing in a temporary table')
             df.to_sql(table_name, db, if_exists='replace')
+
+            # After moving data to the temporary table, attempt to force the column to be the correct type:
+            with db.begin() as cn:
+                sql = text('ALTER TABLE ' + table_name + ' ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;')
+                print(f'Attempting to run SQL statement: {str(sql)}')
+                logger.log_struct(
+                    {
+                        "message": 'Running SQL statement to convert column datatype',
+                        "severity": 'INFO',
+                        "table-name": table_name,
+                        "column-name": 'timestampMillisOfStatusLock',
+                        "sql": str(sql)
+                    }
+                )
+                cn.execute(sql)
+
             logger.log('Copying temp_status into status_history', severity="INFO")
             print('Now copying into the real table...')
             with db.begin() as cn:
-                sql = text("""INSERT INTO status_history SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
+                # Manually specify which columns to insert so that we can *force* "timestampMillisOfStatusLock" to be cast as BIGINT when inserting into the primary table
+                sql = text('INSERT INTO status_history ("noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock", "lockedStatus", "timestampMillisOfRetroLock", "statusId") SELECT "noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock"::BIGINT, "lockedStatus", "timestampMillisOfRetroLock", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+
                 cn.execute(sql)
             try:
                 cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
