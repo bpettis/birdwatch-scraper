@@ -191,25 +191,25 @@ def main(event_data, context):
             # sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
             sql = text('INSERT INTO enrollment_status ("participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId") SELECT "participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
             cn.execute(sql)
-        # try:
-        #     cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
-        #     logger.log_struct(
-        #         {
-        #             "message": 'Dropped temporary table',
-        #             "severity": 'INFO',
-        #             "table-name": table_name
-        #         }
-        #     )
-        # except Exception as e:
-        #     print('Unable to drop a temp table. Does it actually exist?')
-        #     print(str(type(e)))
-        #     logger.log_struct(
-        #         {
-        #             "message": "Error when dropping temp_enrollment",
-        #             "severity": "WARNING",
-        #             "table-name": table_name,
-        #             "exception": str(type(e))
-        #         })
+        try:
+            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            logger.log_struct(
+                {
+                    "message": 'Dropped temporary table',
+                    "severity": 'INFO',
+                    "table-name": table_name
+                }
+            )
+        except Exception as e:
+            print('Unable to drop a temp table. Does it actually exist?')
+            print(str(type(e)))
+            logger.log_struct(
+                {
+                    "message": "Error when dropping temp_enrollment",
+                    "severity": "WARNING",
+                    "table-name": table_name,
+                    "exception": str(type(e))
+                })
         conn.commit()
     except Exception as e:
         print('Error when processing userEnrollmentStatus:')
