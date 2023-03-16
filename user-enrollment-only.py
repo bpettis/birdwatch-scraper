@@ -188,7 +188,8 @@ def main(event_data, context):
         print('Now copying into the real table...')
         logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
         with db.begin() as cn:
-            sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
+            # sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
+            sql = text('INSERT INTO enrollment_status ("participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId") SELECT "participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
             cn.execute(sql)
         # try:
         #     cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
