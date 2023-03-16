@@ -201,23 +201,26 @@ def main(event_data, context):
     #     except Exception as e:
     #         print('Unable to drop a temp table. Does it actually exist?')
     #         print(str(type(e)))
+    #         message = e.args[0]
     #         logger.log_struct(
     #             {
     #                 "message": "Error when dropping temp_notes",
     #                 "severity": "WARNING",
     #                 "table-name": table_name,
-    #                 "exception": str(type(e))
+    #                 "exception": str(type(e)),
+    #                 "error": message
     #             })
     #     conn.commit()
     # except Exception as e:
     #     print('Error when processing notes:')
     #     print(str(type(e)))
-    #     print(e)
+    #     message = e.args[0]
     #     logger.log_struct(
     #         {
     #             "message": "Error when retreiving notes.tsv",
     #             "severity": "WARNING",
     #             "exception": str(type(e))
+    #             "error": message
     #         })
 
 
@@ -287,23 +290,26 @@ def main(event_data, context):
     #     except Exception as e:
     #         print('Unable to drop a temp table. Does it actually exist?')
     #         print(str(type(e)))
+    #         message = e.args[0]
     #         logger.log_struct(
     #             {
     #                 "message": "Error when dropping temp_ratings",
     #                 "severity": "WARNING",
     #                 "table-name": table_name,
-    #                 "exception": str(type(e))
+    #                 "exception": str(type(e)),
+    #                 "error": message
     #             })
     #     conn.commit()
     # except Exception as e:
     #     print('Error when getting ratings:')
     #     print(str(type(e)))
-    #     print(e)
+    #     message = e.args[0]
     #     logger.log_struct(
     #         {
     #             "message": "Error when processing ratings.tsv",
     #             "severity": "WARNING",
-    #             "exception": str(type(e))
+    #             "exception": str(type(e)),
+    #             "error": message
     #         })
 
     # print('Done! Now refreshing the db connection...')
@@ -411,13 +417,13 @@ def main(event_data, context):
     # except Exception as e:
     #     print('Error when processing noteStatusHistory:')
     #     print(str(type(e)))
-    #     print(str(e))
+    #     message = e.args[0]
     #     logger.log_struct(
     #         {
     #             "message": "Error when retreiving noteStatusHistory.tsv",
     #             "severity": "WARNING",
     #             "exception": str(type(e)),
-    #             "error": str(e)
+    #             "error": message
     #         })
 
     # print('Done! Now refreshing the db connection...')
