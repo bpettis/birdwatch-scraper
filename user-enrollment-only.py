@@ -185,6 +185,12 @@ def main(event_data, context):
         )
         df.to_sql(table_name, db, if_exists='replace')
 
+        # Some older data is likely to not include the modelPopulation value, so we add that column if it's not present. It will contain null data, but we add it just in case.
+        with db.begin() as cn:
+            # sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
+            sql = text('ALTER TABLE ' + table_name + ' ADD COLUMN IF NOT EXISTS "modelingPopulation" TEXT;')
+            cn.execute(sql)
+
         print('Now copying into the real table...')
         logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
         with db.begin() as cn:
