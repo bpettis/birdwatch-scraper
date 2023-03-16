@@ -161,7 +161,7 @@ def main(event_data, context):
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
         # drop = int(size * 0.9)
-        drop = int(size - 10)
+        drop = int(size - 10) # only keep 10 rows. A small number for testing so things move quickly
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
@@ -252,7 +252,7 @@ if __name__ == "__main__":
     print('FYI: Script started directly as __main__')
     logger.log_struct(
         {
-            "message": "Script Execution Started - import-tsv.py",
+            "message": "Script Execution Started - user-enrollment-only.py",
             "severity": "NOTICE",
             "hostname": str(socket.gethostname()),
             "parsing-files-from": start_date
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     logger.log('Script execution finished', severity="NOTICE")
     logger.log_struct(
         {
-            "message": "Script Execution finished - import-tsv.py",
+            "message": "Script Execution finished - user-enrollment-only.py",
             "severity": "INFO",
             "total-time": str(total_time),
             "hostname": str(socket.gethostname())
