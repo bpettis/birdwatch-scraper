@@ -159,6 +159,7 @@ def main(event_data, context):
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
         drop = int(size * 0.9)
+        # drop = int(size - 10) # use a small number when testing - it'll go way faster!
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
@@ -186,7 +187,7 @@ def main(event_data, context):
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
         with db.begin() as cn:
-            sql = text("""INSERT INTO notes SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
+            sql = text('INSERT INTO notes ("noteId", "createdAtMillis", "tweetId", "classification", "believable", "harmful", "validationDifficulty", "misleadingOther", "misleadingFactualError", "misleadingManipulatedMedia", "misleadingOutdatedInformation", "misleadingMissingImportantContext", "misleadingUnverifiedClaimAsFact", "misleadingSatire", "notMisleadingOther", "notMisleadingFactuallyCorrect", "notMisleadingOutdatedButNotWhenWritten", "notMisleadingClearlySatire", "notMisleadingPersonalOpinion", "trustworthySources", "summary", "noteAuthorParticipantId" ) SELECT "noteId", "createdAtMillis", "tweetId", "classification", "believable", "harmful", "validationDifficulty", "misleadingOther", "misleadingFactualError", "misleadingManipulatedMedia", "misleadingOutdatedInformation", "misleadingMissingImportantContext", "misleadingUnverifiedClaimAsFact", "misleadingSatire", "notMisleadingOther", "notMisleadingFactuallyCorrect", "notMisleadingOutdatedButNotWhenWritten", "notMisleadingClearlySatire", "notMisleadingPersonalOpinion", "trustworthySources", "summary", "noteAuthorParticipantId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
             cn.execute(sql)
 
         try:
@@ -250,6 +251,7 @@ def main(event_data, context):
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
         drop = int(size * 0.9)
+        # drop = int(size - 10) # use a small number when testing - it'll go way faster!
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
@@ -276,7 +278,7 @@ def main(event_data, context):
         print('Now copying into the real table...')
         logger.log('Copying temp_ratings into ratings', severity="INFO")
         with db.begin() as cn:
-            sql = text("""INSERT INTO ratings SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
+            sql = text('INSERT INTO ratings ("noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId") SELECT "noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
             cn.execute(sql)
         try:
             cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
@@ -343,6 +345,7 @@ def main(event_data, context):
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
         drop = int(size * 0.9)
+        # drop = int(size - 10) # use a small number when testing - it'll go way faster!
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
@@ -451,6 +454,7 @@ def main(event_data, context):
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
         drop = int(size * 0.9)
+        # drop = int(size - 10) # use a small number when testing - it'll go way faster!
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
@@ -474,10 +478,16 @@ def main(event_data, context):
         )
         df.to_sql(table_name, db, if_exists='replace')
 
+        # Some older data is likely to not include the modelPopulation value, so we add that column if it's not present. It will contain null data, but we add it just in case.
+        with db.begin() as cn:
+            # sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
+            sql = text('ALTER TABLE ' + table_name + ' ADD COLUMN IF NOT EXISTS "modelingPopulation" TEXT;')
+            cn.execute(sql)
+
         print('Now copying into the real table...')
         logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
         with db.begin() as cn:
-            sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
+            sql = text('INSERT INTO enrollment_status ("participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId") SELECT "participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
             cn.execute(sql)
         try:
             cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
