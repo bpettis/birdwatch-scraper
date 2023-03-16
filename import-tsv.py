@@ -148,288 +148,289 @@ def main(event_data, context):
     #   (with error handling for if a file is missing for whatever reason)
     file_path = os.environ.get("DATE_OVERRIDE", date.today().strftime("%Y/%m/%d"))
 
-    ## Get notes ##
-    try:
-        object = file_path + '/notes.tsv'
-        table_name = 'temp_notes_' + start_date
-        df = retrieve_tsv(object)
-        df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
-        print(df.info())
-        print(df)
-        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.shape[0]
-        drop = int(size * 0.9)
-        df.drop(df.tail(drop).index, inplace = True)
-        logger.log_struct(
-            {
-                "message": 'Dropped rows from dataframe',
-                "original-size": str(size),
-                "dropped-rows": str(drop),
-                "new-size": str(df.shape[0]),
-                "severity": 'INFO',
-            }
-        )
-        print("***")
-        print(df)
-        # # Insert data from that file into the db:
-        print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
-        logger.log_struct(
-            {
-                "message": 'Now converting dataframe into sql and placing into a temporary table',
-                "severity": "INFO",
-                "object": str(object),
-                "table-name": table_name
-            }
-        )
+    # ## Get notes ##
+    # try:
+    #     object = file_path + '/notes.tsv'
+    #     table_name = 'temp_notes_' + start_date
+    #     df = retrieve_tsv(object)
+    #     df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
+    #     print(df.info())
+    #     print(df)
+    #     # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+    #     size = df.shape[0]
+    #     drop = int(size * 0.9)
+    #     df.drop(df.tail(drop).index, inplace = True)
+    #     logger.log_struct(
+    #         {
+    #             "message": 'Dropped rows from dataframe',
+    #             "original-size": str(size),
+    #             "dropped-rows": str(drop),
+    #             "new-size": str(df.shape[0]),
+    #             "severity": 'INFO',
+    #         }
+    #     )
+    #     print("***")
+    #     print(df)
+    #     # # Insert data from that file into the db:
+    #     print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
+    #     logger.log_struct(
+    #         {
+    #             "message": 'Now converting dataframe into sql and placing into a temporary table',
+    #             "severity": "INFO",
+    #             "object": str(object),
+    #             "table-name": table_name
+    #         }
+    #     )
 
-        df.to_sql(table_name, db, if_exists='replace')
-        logger.log('Copying temp_notes into the notes table', severity="INFO")
-        print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = text("""INSERT INTO notes SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
-            cn.execute(sql)
+    #     df.to_sql(table_name, db, if_exists='replace')
+    #     logger.log('Copying temp_notes into the notes table', severity="INFO")
+    #     print('Now copying into the real table...')
+    #     with db.begin() as cn:
+    #         sql = text("""INSERT INTO notes SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
+    #         cn.execute(sql)
 
-        try:
-            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
-            logger.log_struct(
-                {
-                    "message": 'Dropped temporary table',
-                    "severity": 'INFO',
-                    "table-name": table_name
-                }
-            )
-        except Exception as e:
-            print('Unable to drop a temp table. Does it actually exist?')
-            print(str(type(e)))
-            logger.log_struct(
-                {
-                    "message": "Error when dropping temp_notes",
-                    "severity": "WARNING",
-                    "table-name": table_name,
-                    "exception": str(type(e))
-                })
-        conn.commit()
-    except Exception as e:
-        print('Error when processing notes:')
-        print(str(type(e)))
-        print(e)
-        logger.log_struct(
-            {
-                "message": "Error when retreiving notes.tsv",
-                "severity": "WARNING",
-                "exception": str(type(e))
-            })
+    #     try:
+    #         cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+    #         logger.log_struct(
+    #             {
+    #                 "message": 'Dropped temporary table',
+    #                 "severity": 'INFO',
+    #                 "table-name": table_name
+    #             }
+    #         )
+    #     except Exception as e:
+    #         print('Unable to drop a temp table. Does it actually exist?')
+    #         print(str(type(e)))
+    #         logger.log_struct(
+    #             {
+    #                 "message": "Error when dropping temp_notes",
+    #                 "severity": "WARNING",
+    #                 "table-name": table_name,
+    #                 "exception": str(type(e))
+    #             })
+    #     conn.commit()
+    # except Exception as e:
+    #     print('Error when processing notes:')
+    #     print(str(type(e)))
+    #     print(e)
+    #     logger.log_struct(
+    #         {
+    #             "message": "Error when retreiving notes.tsv",
+    #             "severity": "WARNING",
+    #             "exception": str(type(e))
+    #         })
 
 
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
+    # print('Done! Now refreshing the db connection...')
+    # try:
+    #     conn.close()
+    #     # Using a with statement ensures that the connection is always released
+    #     # back into the pool at the end of statement (even if an error occurs)
+    #     conn = db.raw_connection()
+    #     cur = conn.cursor()
+    #     print('db connection seems to have worked')
+    # except:
+    #     print('db connection failure')
+    #     quit()
     
 
 
-    ## Get ratings ##
-    try:
-        object = file_path + '/ratings.tsv'
-        table_name = 'temp_ratings_' + start_date
-        df = retrieve_tsv(object)
-        df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
-        df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        print(df.info())
-        print(df)
-        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.shape[0]
-        drop = int(size * 0.9)
-        df.drop(df.tail(drop).index, inplace = True)
-        logger.log_struct(
-            {
-                "message": 'Dropped rows from dataframe',
-                "original-size": str(size),
-                "dropped-rows": str(drop),
-                "new-size": str(df.shape[0]),
-                "severity": 'INFO',
-            }
-        )
-        print("***")
-        print(df)
-        print('Now converting dataframe into sql and placing into a temporary table')
-        logger.log_struct(
-            {
-                "message": 'Now converting dataframe into sql and placing into a temporary table',
-                "severity": "INFO",
-                "object": str(object),
-                "table-name": table_name
-            }
-        )
-        df.to_sql(table_name, db, if_exists='replace')
+    # ## Get ratings ##
+    # try:
+    #     object = file_path + '/ratings.tsv'
+    #     table_name = 'temp_ratings_' + start_date
+    #     df = retrieve_tsv(object)
+    #     df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
+    #     df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    #     print(df.info())
+    #     print(df)
+    #     # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+    #     size = df.shape[0]
+    #     drop = int(size * 0.9)
+    #     df.drop(df.tail(drop).index, inplace = True)
+    #     logger.log_struct(
+    #         {
+    #             "message": 'Dropped rows from dataframe',
+    #             "original-size": str(size),
+    #             "dropped-rows": str(drop),
+    #             "new-size": str(df.shape[0]),
+    #             "severity": 'INFO',
+    #         }
+    #     )
+    #     print("***")
+    #     print(df)
+    #     print('Now converting dataframe into sql and placing into a temporary table')
+    #     logger.log_struct(
+    #         {
+    #             "message": 'Now converting dataframe into sql and placing into a temporary table',
+    #             "severity": "INFO",
+    #             "object": str(object),
+    #             "table-name": table_name
+    #         }
+    #     )
+    #     df.to_sql(table_name, db, if_exists='replace')
 
-        print('Now copying into the real table...')
-        logger.log('Copying temp_ratings into ratings', severity="INFO")
-        with db.begin() as cn:
-            sql = text("""INSERT INTO ratings SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
-            cn.execute(sql)
-        try:
-            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
-            logger.log_struct(
-                {
-                    "message": 'Dropped temporary table',
-                    "severity": 'INFO',
-                    "table-name": table_name
-                }
-            )
-        except Exception as e:
-            print('Unable to drop a temp table. Does it actually exist?')
-            print(str(type(e)))
-            logger.log_struct(
-                {
-                    "message": "Error when dropping temp_ratings",
-                    "severity": "WARNING",
-                    "table-name": table_name,
-                    "exception": str(type(e))
-                })
-        conn.commit()
-    except Exception as e:
-        print('Error when getting ratings:')
-        print(str(type(e)))
-        print(e)
-        logger.log_struct(
-            {
-                "message": "Error when processing ratings.tsv",
-                "severity": "WARNING",
-                "exception": str(type(e))
-            })
+    #     print('Now copying into the real table...')
+    #     logger.log('Copying temp_ratings into ratings', severity="INFO")
+    #     with db.begin() as cn:
+    #         sql = text("""INSERT INTO ratings SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING;""")
+    #         cn.execute(sql)
+    #     try:
+    #         cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+    #         logger.log_struct(
+    #             {
+    #                 "message": 'Dropped temporary table',
+    #                 "severity": 'INFO',
+    #                 "table-name": table_name
+    #             }
+    #         )
+    #     except Exception as e:
+    #         print('Unable to drop a temp table. Does it actually exist?')
+    #         print(str(type(e)))
+    #         logger.log_struct(
+    #             {
+    #                 "message": "Error when dropping temp_ratings",
+    #                 "severity": "WARNING",
+    #                 "table-name": table_name,
+    #                 "exception": str(type(e))
+    #             })
+    #     conn.commit()
+    # except Exception as e:
+    #     print('Error when getting ratings:')
+    #     print(str(type(e)))
+    #     print(e)
+    #     logger.log_struct(
+    #         {
+    #             "message": "Error when processing ratings.tsv",
+    #             "severity": "WARNING",
+    #             "exception": str(type(e))
+    #         })
 
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
+    # print('Done! Now refreshing the db connection...')
+    # try:
+    #     conn.close()
+    #     # Using a with statement ensures that the connection is always released
+    #     # back into the pool at the end of statement (even if an error occurs)
+    #     conn = db.raw_connection()
+    #     cur = conn.cursor()
+    #     print('db connection seems to have worked')
+    # except:
+    #     print('db connection failure')
+    #     quit()
 
-    ## Get noteStatusHistory ##
-    try:
-        object = file_path + '/noteStatusHistory.tsv'
-        table_name = 'temp_status_' + start_date
-        df = retrieve_tsv(object)
-        try:
-            df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        except:
-            try:
-                df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-            except:
-                df['statusId'] = 'IDERROR' + datetime.now().strftime('%s')
+    # ## Get noteStatusHistory ##
+    # try:
+    #     object = file_path + '/noteStatusHistory.tsv'
+    #     table_name = 'temp_status_' + start_date
+    #     df = retrieve_tsv(object)
+    #     try:
+    #         df['statusId'] = df[['noteId', 'noteAuthorParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    #     except:
+    #         try:
+    #             df['statusId'] = df[['noteId', 'participantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+    #         except:
+    #             df['statusId'] = 'IDERROR' + datetime.now().strftime('%s')
 
-        print(df.info())
-        print(df)
-        df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
-        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.shape[0]
-        drop = int(size * 0.9)
-        df.drop(df.tail(drop).index, inplace = True)
-        logger.log_struct(
-            {
-                "message": 'Dropped rows from dataframe',
-                "original-size": str(size),
-                "dropped-rows": str(drop),
-                "new-size": str(df.shape[0]),
-                "severity": 'INFO',
-            }
-        )
-        print("***")
-        print(df)
-        # Coax this column into being an actual number, and replace any NaN values with 0
-        df['timestampMillisOfStatusLock'] = pd.to_numeric(df['timestampMillisOfStatusLock'], errors='coerce').fillna(0).astype(int)
+    #     print(df.info())
+    #     print(df)
+    #     df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
+    #     # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+    #     size = df.shape[0]
+    #     drop = int(size * 0.9)
+    #     df.drop(df.tail(drop).index, inplace = True)
+    #     logger.log_struct(
+    #         {
+    #             "message": 'Dropped rows from dataframe',
+    #             "original-size": str(size),
+    #             "dropped-rows": str(drop),
+    #             "new-size": str(df.shape[0]),
+    #             "severity": 'INFO',
+    #         }
+    #     )
+    #     print("***")
+    #     print(df)
+    #     # Coax this column into being an actual number, and replace any NaN values with 0
+    #     df['timestampMillisOfStatusLock'] = pd.to_numeric(df['timestampMillisOfStatusLock'], errors='coerce').fillna(0).astype(int)
 
-        print('Now converting dataframe into sql and placing in a temporary table')
-        logger.log_struct(
-            {
-                "message": 'Now converting dataframe into sql and placing into a temporary table',
-                "severity": "INFO",
-                "object": str(object),
-                "table-name": table_name
-            }
-        )
-        df.to_sql(table_name, db, if_exists='replace')
-
-
-        # After moving data to the temporary table, attempt to force the column to be the correct type:
-        with db.begin() as cn:
-            sql = text('ALTER TABLE ' + table_name + ' ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;')
-            print(f'Attempting to run SQL statement: {str(sql)}')
-            logger.log_struct(
-                {
-                    "message": 'Running SQL statement to convert column datatype',
-                    "severity": 'INFO',
-                    "table-name": table_name,
-                    "column-name": 'timestampMillisOfStatusLock',
-                    "sql": str(sql)
-                }
-            )
-            cn.execute(sql)
+    #     print('Now converting dataframe into sql and placing in a temporary table')
+    #     logger.log_struct(
+    #         {
+    #             "message": 'Now converting dataframe into sql and placing into a temporary table',
+    #             "severity": "INFO",
+    #             "object": str(object),
+    #             "table-name": table_name
+    #         }
+    #     )
+    #     df.to_sql(table_name, db, if_exists='replace')
 
 
-        print('Now copying into the real table...')
-        logger.log('Copying temp_status into status_history', severity="INFO")
-        with db.begin() as cn:
+    #     # After moving data to the temporary table, attempt to force the column to be the correct type:
+    #     with db.begin() as cn:
+    #         sql = text('ALTER TABLE ' + table_name + ' ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;')
+    #         print(f'Attempting to run SQL statement: {str(sql)}')
+    #         logger.log_struct(
+    #             {
+    #                 "message": 'Running SQL statement to convert column datatype',
+    #                 "severity": 'INFO',
+    #                 "table-name": table_name,
+    #                 "column-name": 'timestampMillisOfStatusLock',
+    #                 "sql": str(sql)
+    #             }
+    #         )
+    #         cn.execute(sql)
 
-            # Manually specify which columns to insert so that we can *force* "timestampMillisOfStatusLock" to be cast as BIGINT when inserting into the primary table
-            sql = text('INSERT INTO status_history ("noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock", "lockedStatus", "timestampMillisOfRetroLock", "statusId") SELECT "noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock"::BIGINT, "lockedStatus", "timestampMillisOfRetroLock", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
 
-            cn.execute(sql)
-        try:
-            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
-            logger.log_struct(
-                {
-                    "message": 'Dropped temporary table',
-                    "severity": 'INFO',
-                    "table-name": table_name
-                }
-            )
-        except Exception as e:
-            print('Unable to drop a temp table. Does it actually exist?')
-            print(str(type(e)))
-            logger.log_struct(
-                {
-                    "message": "Error when dropping temp_status",
-                    "severity": "WARNING",
-                    "table-name": table_name,
-                    "exception": str(type(e))
-                })
-        conn.commit()
-    except Exception as e:
-        print('Error when processing noteStatusHistory:')
-        print(str(type(e)))
-        print(e)
-        logger.log_struct(
-            {
-                "message": "Error when retreiving noteStatusHistory.tsv",
-                "severity": "WARNING",
-                "exception": str(type(e))
-            })
+    #     print('Now copying into the real table...')
+    #     logger.log('Copying temp_status into status_history', severity="INFO")
+    #     with db.begin() as cn:
 
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
+    #         # Manually specify which columns to insert so that we can *force* "timestampMillisOfStatusLock" to be cast as BIGINT when inserting into the primary table
+    #         sql = text('INSERT INTO status_history ("noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock", "lockedStatus", "timestampMillisOfRetroLock", "statusId") SELECT "noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock"::BIGINT, "lockedStatus", "timestampMillisOfRetroLock", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+
+    #         cn.execute(sql)
+    #     try:
+    #         cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+    #         logger.log_struct(
+    #             {
+    #                 "message": 'Dropped temporary table',
+    #                 "severity": 'INFO',
+    #                 "table-name": table_name
+    #             }
+    #         )
+    #     except Exception as e:
+    #         print('Unable to drop a temp table. Does it actually exist?')
+    #         print(str(type(e)))
+    #         logger.log_struct(
+    #             {
+    #                 "message": "Error when dropping temp_status",
+    #                 "severity": "WARNING",
+    #                 "table-name": table_name,
+    #                 "exception": str(type(e))
+    #             })
+    #     conn.commit()
+    # except Exception as e:
+    #     print('Error when processing noteStatusHistory:')
+    #     print(str(type(e)))
+    #     print(str(e))
+    #     logger.log_struct(
+    #         {
+    #             "message": "Error when retreiving noteStatusHistory.tsv",
+    #             "severity": "WARNING",
+    #             "exception": str(type(e)),
+    #             "error": str(e)
+    #         })
+
+    # print('Done! Now refreshing the db connection...')
+    # try:
+    #     conn.close()
+    #     # Using a with statement ensures that the connection is always released
+    #     # back into the pool at the end of statement (even if an error occurs)
+    #     conn = db.raw_connection()
+    #     cur = conn.cursor()
+    #     print('db connection seems to have worked')
+    # except:
+    #     print('db connection failure')
+    #     quit()
 
     ## Get userEnrollmentStatus ##
     try:
@@ -495,12 +496,13 @@ def main(event_data, context):
     except Exception as e:
         print('Error when processing userEnrollmentStatus:')
         print(str(type(e)))
-        print(e)
+        message = e.args[0]
         logger.log_struct(
             {
                 "message": "Error when retreiving userEnrollmentStatus.tsv",
                 "severity": "WARNING",
-                "exception": str(type(e))
+                "exception": str(type(e)),
+                "error": message
             })
 
     
