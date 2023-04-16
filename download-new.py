@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from urllib.request import urlopen
 from urllib.error import HTTPError
 from google.cloud import storage
+from dotenv import load_dotenv, find_dotenv
 import urllib.request, time, os
 import requests
 import gzip
@@ -11,6 +12,8 @@ import gzip
 # some global variables:
 end_date = date.today()
 
+# set up some global variables:
+load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 
