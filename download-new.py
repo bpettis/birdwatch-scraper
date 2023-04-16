@@ -13,7 +13,8 @@ import gzip
 end_date = date.today()
 
 # set up some global variables:
-load_dotenv(find_dotenv()) # load environment variables
+load_dotenv(find_dotenv()) # load environment variables from .env file
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ.get("APP_ENGINE_SERVICE_ACCOUNT") # set the specific creds json to the file that gcloud is expecting
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 
