@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from urllib.request import urlopen
 from urllib.error import HTTPError
 from google.cloud import storage
+import google.cloud.logging
 from dotenv import load_dotenv, find_dotenv
 import urllib.request, time, os
 import requests
@@ -18,25 +19,59 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ.get("GCS_SERVICE_ACCOU
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 
+# Set up Google cloud logging:
+log_client = google.cloud.logging.Client(project=project_id)
+logger = log_client.logger(name='homelab-tsv-downloader')
+
 dates_list = []
 url_list = {}
 
 def query_url(url):
     print(f'Querying {url}')
+    logger.log_struct(
+        {
+            "message": "Querying URL",
+            "severity": "DEBUG",
+            "url": str(url)
+        })
     try:
         r = requests.get(url, allow_redirects=True)
         print(r.status_code)
         if (r.status_code != 200):
             print("Didn't get a HTTP 200 response")
+            logger.log_struct(
+            {
+                "message": "Retrieving TSV and loading into Pandas dataframe",
+                "severity": "ERROR",
+                "url": str(url),
+                "http-status": str(r.status_code)
+            })
             return 1
         print(r.headers.get('content-type'))
         file_size = r.headers.get('Content-Length')
         print(f'Content-Length: {file_size}')
+        logger.log_struct(
+            {
+                "message": "Successfully downloaded file",
+                "severity": "INFO",
+                "http-status": str(r.status_code),
+                "content-type": str(r.headers.get('content-type')),
+                "content-length": str(file_size),
+                "url": str(url)
+            })
         return r.content
     except Exception as e:
         print('Something went wrong!')
         print(type(e))
         print(e)
+        logger.log_struct(
+            {
+                "message": "Error when making HTTP request",
+                "severity": "ERROR",
+                "url": str(url),
+                "exception": str(type(e)),
+                "error": str(e)
+            })
         return 1
     # try:
     #     # request.add_header('Accept-Encoding','gzip, deflate')
@@ -98,6 +133,13 @@ def upload_blob(contents, destination_blob_name):
     print(
         f"{destination_blob_name} was uploaded to {bucket_name}."
     )
+    logger.log_struct(
+            {
+                "message": "Upload was completed",
+                "severity": "INFO",
+                "destination-object": str(destination_blob_name),
+                "bucket": str(bucket_name)
+            })
 
 def main(event_data, context):
     # We have to include event_data and context because these will be passed as arguments when invoked as a Cloud Function
@@ -106,6 +148,13 @@ def main(event_data, context):
 
     # Our list of dates to check only needs one date, today:
     dates_list.append(date.today().strftime("%Y/%m/%d"))
+
+    logger.log_struct(
+            {
+                "message": "Beginning to Download TSV Files",
+                "severity": "INFO",
+                "date": str(date.today().strftime("%Y/%m/%d"))
+            })
 
     # Use those dates to create a list of URLs to then download
     for target_date in dates_list:
@@ -154,6 +203,11 @@ def main(event_data, context):
             print('seems something went wrong. check above for error messages')
 
     print('Finished!')
+    logger.log_struct(
+            {
+                "message": "Finished Downloading/Saving TSV Files",
+                "severity": "INFO"
+            })
     
 if __name__ == "__main__":
     print('FYI: Script started directly as __main__')
