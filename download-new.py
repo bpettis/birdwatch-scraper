@@ -30,6 +30,8 @@ def query_url(url):
             print("Didn't get a HTTP 200 response")
             return 1
         print(r.headers.get('content-type'))
+        file_size = r.headers.get('Content-Length')
+        print(f'Content-Length: {file_size}')
         return r.content
     except Exception as e:
         print('Something went wrong!')
