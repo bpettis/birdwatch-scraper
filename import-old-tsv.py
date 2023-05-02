@@ -159,7 +159,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/notes.tsv'
-        table_name = 'temp_notes_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_notes_' + str(file_path)
         try:
             conn.close()
             # Using a with statement ensures that the connection is always released
@@ -251,7 +251,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/ratings.tsv'
-        table_name = 'temp_ratings_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_ratings_' + str(file_path)
         print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
@@ -326,7 +326,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/noteStatusHistory.tsv'
-        table_name = 'temp_status_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_status_' + str(file_path)
         print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
@@ -430,7 +430,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/userEnrollmentStatus.tsv'
-        table_name = 'temp_enrollment_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_enrollment_' + str(file_path)
         try:
             df = retrieve_tsv(object)
             # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
