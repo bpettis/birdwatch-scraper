@@ -96,8 +96,8 @@ def upload_blob(contents, destination_blob_name):
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
 
-    # upload the blob - with a timeout of up to 15 minutes
-    blob.upload_from_string(contents, timeout=900)
+    # upload the blob - with a timeout of up to 30 minutes
+    blob.upload_from_string(contents, timeout=1800)
 
     print(
         f"{destination_blob_name} was uploaded to {bucket_name}."
