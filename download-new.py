@@ -11,9 +11,18 @@ import gzip
 # some global variables:
 end_date = date.today()
 
+# load GCS info from the environment:
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 
+# Note: if the script is being ran *outside* of Google Cloud, you will need to ensure that these variables are set when the script is started
+# This is especially true if you are scheduling the script to run as a cron job. I find it's useful to explicitly set these environmental variables
+# within the crontab itself, just to make sure that it's getting included.
+# 
+# Along with GCP_PROJECT and gcs_bucket_name, you will also need to make sure that you set GOOGLE_APPLICATION_CREDENTIALS to a file path that points to the
+# key file for a service account that has permission to write into the specified bucket.
+
+# set up variables that we'll be putting data into later
 dates_list = []
 url_list = {}
 
