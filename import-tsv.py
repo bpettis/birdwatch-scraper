@@ -108,7 +108,7 @@ def main(event_data, context):
         print(df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
-        drop = int(size * 0.9)
+        drop = int(size * 0.999)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
@@ -187,7 +187,7 @@ def main(event_data, context):
         print(df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
-        drop = int(size * 0.9)
+        drop = int(size * 0.999)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
@@ -271,7 +271,7 @@ def main(event_data, context):
         df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
-        drop = int(size * 0.9)
+        drop = int(size * 0.999)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
@@ -371,7 +371,7 @@ def main(event_data, context):
         print(df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
-        drop = int(size * 0.9)
+        drop = int(size * 0.999)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
         df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
