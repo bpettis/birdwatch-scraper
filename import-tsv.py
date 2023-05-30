@@ -6,6 +6,7 @@ import google.cloud.logging
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
 import os, sqlalchemy, pg8000, socket, psycopg2
+from psycopg2 import pool
 
 # REQUIREMENTS
 #
