@@ -160,6 +160,7 @@ def main(event_data, context):
     except Exception as e:
         print('Error when processing notes:')
         print(str(type(e)))
+        print(e)
         message = e.args[0]
         logger.log_struct(
             {
