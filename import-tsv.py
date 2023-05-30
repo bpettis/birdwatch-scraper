@@ -213,7 +213,7 @@ def main(event_data, context):
         logger.log('Copying temp_ratings into ratings', severity="INFO")
         connection = db.getconn()
         cursor = connection.cursor()
-        sql = text('INSERT INTO ratings ("noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId") SELECT "noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+        sql = 'INSERT INTO ratings ("noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId") SELECT "noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
         cursor.execute(sql)
         try:
             cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
@@ -301,7 +301,7 @@ def main(event_data, context):
         # After moving data to the temporary table, attempt to force the column to be the correct type:
         connection = db.getconn()
         cursor = connection.cursor()
-        sql = text('ALTER TABLE ' + table_name + ' ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;')
+        sql = 'ALTER TABLE {0} ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;'.format(table_name)
         print(f'Attempting to run SQL statement: {str(sql)}')
         logger.log_struct(
             {
@@ -322,7 +322,7 @@ def main(event_data, context):
         connection = db.getconn()
         cursor = connection.cursor()
         # Manually specify which columns to insert so that we can *force* "timestampMillisOfStatusLock" to be cast as BIGINT when inserting into the primary table
-        sql = text('INSERT INTO status_history ("noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock", "lockedStatus", "timestampMillisOfRetroLock", "statusId") SELECT "noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock"::BIGINT, "lockedStatus", "timestampMillisOfRetroLock", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+        sql = 'INSERT INTO status_history ("noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock", "lockedStatus", "timestampMillisOfRetroLock", "statusId") SELECT "noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock"::BIGINT, "lockedStatus", "timestampMillisOfRetroLock", "statusId" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
         cursor.execute(sql)
         try:
             cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
@@ -399,12 +399,12 @@ def main(event_data, context):
         connection = db.getconn()
         cursor = connection.cursor()
         # sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
-        sql = text('ALTER TABLE ' + table_name + ' ADD COLUMN IF NOT EXISTS "modelingPopulation" TEXT;')
+        sql = 'ALTER TABLE {0} ADD COLUMN IF NOT EXISTS "modelingPopulation" TEXT;'.format(table_name)
         cursor.execute(sql)
 
         print('Now copying into the real table...')
         logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
-        sql = text('INSERT INTO enrollment_status ("participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId") SELECT "participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+        sql = 'INSERT INTO enrollment_status ("participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId") SELECT "participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
         cursor.execute(sql)
         try:
             cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
