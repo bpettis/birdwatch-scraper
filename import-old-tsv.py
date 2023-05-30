@@ -113,7 +113,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/notes.tsv'
-        table_name = 'temp_notes_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_notes_' + date.today().strftime("%Y%m%d") + '_import_old'
         try: 
             df = retrieve_tsv(object)
             print(df.info())
@@ -186,7 +186,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/ratings.tsv'
-        table_name = 'temp_ratings_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_ratings_' + date.today().strftime("%Y%m%d") + '_import_old'
         print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
@@ -254,7 +254,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/noteStatusHistory.tsv'
-        table_name = 'temp_status_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_status_' + date.today().strftime("%Y%m%d") + '_import_old'
         print(f'Searching for {object}')
         try:
             df = retrieve_tsv(object)
@@ -351,7 +351,7 @@ def main(event_data, context):
                 "current-date": str(file_path)
             })
         object = file_path + '/userEnrollmentStatus.tsv'
-        table_name = 'temp_enrollment_' + date.today().strftime("%Y%m%d")
+        table_name = 'temp_enrollment_' + date.today().strftime("%Y%m%d") + '_import_old'
         try:
             df = retrieve_tsv(object)
             # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
