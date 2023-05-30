@@ -157,6 +157,7 @@ def main(event_data, context):
                     "error": message
                 })
         cursor.close()
+        connection.commit()
         db.putconn(connection)
     except Exception as e:
         print('Error when processing notes:')
@@ -237,6 +238,7 @@ def main(event_data, context):
                     "error": message
                 })
         cursor.close()
+        connection.commit()
         db.putconn(connection)
     except Exception as e:
         print('Error when getting ratings:')
@@ -314,6 +316,7 @@ def main(event_data, context):
         )
         cursor.execute(sql)
         cursor.close()
+        connection.commit()
         db.putconn(connection)
 
 
@@ -344,6 +347,7 @@ def main(event_data, context):
                     "exception": str(type(e))
                 })
         cursor.close()
+        connection.commit()
         db.putconn(connection)
     except Exception as e:
         print('Error when processing noteStatusHistory:')
@@ -426,6 +430,7 @@ def main(event_data, context):
                     "exception": str(type(e))
                 })
         cursor.close()
+        connection.commit()
         db.putconn(connection)
     except Exception as e:
         print('Error when processing userEnrollmentStatus:')
