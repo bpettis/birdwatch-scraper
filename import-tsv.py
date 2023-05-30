@@ -2,11 +2,10 @@ from google.cloud import storage
 import pandas as pd
 from datetime import date
 from sqlalchemy import create_engine, text
-from google.cloud.sql.connector import Connector, IPTypes
 import google.cloud.logging
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
-import os, sqlalchemy, pg8000, socket
+import os, sqlalchemy, pg8000, socket, psycopg2
 
 # REQUIREMENTS
 #
