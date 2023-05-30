@@ -52,7 +52,7 @@ def connection_pool():
         quit()
 
 def connection_engine():
-    conn_string = 'postgres://' + db_user + ':' + db_password + '@' + db_host + '/' + db_name
+    conn_string = 'postgresql://' + db_user + ':' + db_password + '@' + db_host + '/' + db_name
     db_engine = create_engine(conn_string)
     connection_engine = db_engine.connect()
     return connection_engine
