@@ -129,6 +129,7 @@ def main(event_data, context):
                 }
             )
             df.to_sql(table_name, engine, if_exists='replace')
+            engine.commit()
             logger.log('Copying temp_notes into the notes table', severity="INFO")
             print('Now copying into the real table...')
             connection = db.getconn()
@@ -203,6 +204,7 @@ def main(event_data, context):
             )
             print('Now converting dataframe into sql and placing into a temporary table')
             df.to_sql(table_name, engine, if_exists='replace')
+            engine.commit()
             logger.log('Copying temp_ratings into ratings', severity="INFO")
 
             print('Now copying into the real table...')
@@ -281,6 +283,7 @@ def main(event_data, context):
             )
             print('Now converting dataframe into sql and placing in a temporary table')
             df.to_sql(table_name, engine, if_exists='replace')
+            engine.commit()
 
             # After moving data to the temporary table, attempt to force the column to be the correct type:
             sql = 'ALTER TABLE {0} ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;'.format(table_name)
@@ -368,6 +371,7 @@ def main(event_data, context):
                 }
             )
             df.to_sql(table_name, engine, if_exists='replace')
+            engine.commit()
 
             # Some older data is likely to not include the modelPopulation value, so we add that column if it's not present. It will contain null data, but we add it just in case.
             # sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
