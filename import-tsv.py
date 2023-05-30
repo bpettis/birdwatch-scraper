@@ -7,6 +7,7 @@ from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
 import os, sqlalchemy, pg8000, socket, psycopg2
 from psycopg2 import pool
+import traceback
 
 # REQUIREMENTS
 #
@@ -161,6 +162,7 @@ def main(event_data, context):
         print('Error when processing notes:')
         print(str(type(e)))
         print(e)
+        print(traceback.format_exc())
         message = e.args[0]
         logger.log_struct(
             {
