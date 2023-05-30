@@ -25,6 +25,11 @@ project_id = os.environ.get("GCP_PROJECT")
 log_name = os.environ.get("LOG_ID")
 start_date = os.environ.get("DATE_OVERRIDE", date.today().strftime("%Y%m%d")).replace("/", "") # Get the DATE_OVERRIDE environment variable, or use today's date if not present. If the environment variable has forward slashes, remove those.
 
+# Get DB info from the environment
+db_host = os.environ.get("DB_HOST")
+db_user = os.environ.get("DB_USER")
+db_name = os.environ.get("DB_NAME")
+db_password = os.environ.get("DB_PASS")
 
 
 # Set up Google cloud logging:
@@ -100,6 +105,19 @@ def connect_with_connector() -> sqlalchemy.engine.base.Engine:
 
 # [END cloud_sql_postgres_sqlalchemy_connect_connector]
 
+## postgres connection:
+def connection_pool():
+    try:
+        pool = psycopg2.pool.SimpleConnectionPool(1, 10,
+            user=db_user,
+            password=db_password,
+            host=db_host,
+            port="5432",
+            database=db_name)
+        return pool
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Error while connecting to PostgreSQL", error)
+        quit()
 
 def retrieve_tsv(object):
     path = 'gs://' + bucket_name + '/' + object
@@ -123,7 +141,8 @@ def main(event_data, context):
     
     
     # Set up a db connection pool
-    db = connect_with_connector()
+    db = connection_pool()
+
     try:
         # Using a with statement ensures that the connection is always released
         # back into the pool at the end of statement (even if an error occurs)
@@ -186,12 +205,13 @@ def main(event_data, context):
         df.to_sql(table_name, db, if_exists='replace')
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
-        with db.begin() as cn:
-            sql = text('INSERT INTO notes ("noteId", "createdAtMillis", "tweetId", "classification", "believable", "harmful", "validationDifficulty", "misleadingOther", "misleadingFactualError", "misleadingManipulatedMedia", "misleadingOutdatedInformation", "misleadingMissingImportantContext", "misleadingUnverifiedClaimAsFact", "misleadingSatire", "notMisleadingOther", "notMisleadingFactuallyCorrect", "notMisleadingOutdatedButNotWhenWritten", "notMisleadingClearlySatire", "notMisleadingPersonalOpinion", "trustworthySources", "summary", "noteAuthorParticipantId" ) SELECT "noteId", "createdAtMillis", "tweetId", "classification", "believable", "harmful", "validationDifficulty", "misleadingOther", "misleadingFactualError", "misleadingManipulatedMedia", "misleadingOutdatedInformation", "misleadingMissingImportantContext", "misleadingUnverifiedClaimAsFact", "misleadingSatire", "notMisleadingOther", "notMisleadingFactuallyCorrect", "notMisleadingOutdatedButNotWhenWritten", "notMisleadingClearlySatire", "notMisleadingPersonalOpinion", "trustworthySources", "summary", "noteAuthorParticipantId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
-            cn.execute(sql)
+        connection = db.getconn()
+        cursor = connection.cursor()
+        sql = text('INSERT INTO notes ("noteId", "createdAtMillis", "tweetId", "classification", "believable", "harmful", "validationDifficulty", "misleadingOther", "misleadingFactualError", "misleadingManipulatedMedia", "misleadingOutdatedInformation", "misleadingMissingImportantContext", "misleadingUnverifiedClaimAsFact", "misleadingSatire", "notMisleadingOther", "notMisleadingFactuallyCorrect", "notMisleadingOutdatedButNotWhenWritten", "notMisleadingClearlySatire", "notMisleadingPersonalOpinion", "trustworthySources", "summary", "noteAuthorParticipantId" ) SELECT "noteId", "createdAtMillis", "tweetId", "classification", "believable", "harmful", "validationDifficulty", "misleadingOther", "misleadingFactualError", "misleadingManipulatedMedia", "misleadingOutdatedInformation", "misleadingMissingImportantContext", "misleadingUnverifiedClaimAsFact", "misleadingSatire", "notMisleadingOther", "notMisleadingFactuallyCorrect", "notMisleadingOutdatedButNotWhenWritten", "notMisleadingClearlySatire", "notMisleadingPersonalOpinion", "trustworthySources", "summary", "noteAuthorParticipantId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+        cursor.execute(sql)
 
         try:
-            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
             logger.log_struct(
                 {
                     "message": 'Dropped temporary table',
@@ -211,7 +231,8 @@ def main(event_data, context):
                     "exception": str(type(e)),
                     "error": message
                 })
-        conn.commit()
+        cursor.close()
+        db.putconn(connection)
     except Exception as e:
         print('Error when processing notes:')
         print(str(type(e)))
@@ -223,21 +244,6 @@ def main(event_data, context):
                 "exception": str(type(e)),
                 "error": message
             })
-
-
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
-    
-
 
     ## Get ratings ##
     try:
@@ -277,11 +283,12 @@ def main(event_data, context):
 
         print('Now copying into the real table...')
         logger.log('Copying temp_ratings into ratings', severity="INFO")
-        with db.begin() as cn:
-            sql = text('INSERT INTO ratings ("noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId") SELECT "noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
-            cn.execute(sql)
+        connection = db.getconn()
+        cursor = connection.cursor()
+        sql = text('INSERT INTO ratings ("noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId") SELECT "noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+        cursor.execute(sql)
         try:
-            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
             logger.log_struct(
                 {
                     "message": 'Dropped temporary table',
@@ -301,7 +308,8 @@ def main(event_data, context):
                     "exception": str(type(e)),
                     "error": message
                 })
-        conn.commit()
+        cursor.close()
+        db.putconn(connection)
     except Exception as e:
         print('Error when getting ratings:')
         print(str(type(e)))
@@ -313,18 +321,6 @@ def main(event_data, context):
                 "exception": str(type(e)),
                 "error": message
             })
-
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
 
     ## Get noteStatusHistory ##
     try:
@@ -374,31 +370,33 @@ def main(event_data, context):
 
 
         # After moving data to the temporary table, attempt to force the column to be the correct type:
-        with db.begin() as cn:
-            sql = text('ALTER TABLE ' + table_name + ' ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;')
-            print(f'Attempting to run SQL statement: {str(sql)}')
-            logger.log_struct(
-                {
-                    "message": 'Running SQL statement to convert column datatype',
-                    "severity": 'INFO',
-                    "table-name": table_name,
-                    "column-name": 'timestampMillisOfStatusLock',
-                    "sql": str(sql)
-                }
-            )
-            cn.execute(sql)
+        connection = db.getconn()
+        cursor = connection.cursor()
+        sql = text('ALTER TABLE ' + table_name + ' ALTER COLUMN "timestampMillisOfStatusLock" TYPE BIGINT;')
+        print(f'Attempting to run SQL statement: {str(sql)}')
+        logger.log_struct(
+            {
+                "message": 'Running SQL statement to convert column datatype',
+                "severity": 'INFO',
+                "table-name": table_name,
+                "column-name": 'timestampMillisOfStatusLock',
+                "sql": str(sql)
+            }
+        )
+        cursor.execute(sql)
+        cursor.close()
+        db.putconn(connection)
 
 
         print('Now copying into the real table...')
         logger.log('Copying temp_status into status_history', severity="INFO")
-        with db.begin() as cn:
-
-            # Manually specify which columns to insert so that we can *force* "timestampMillisOfStatusLock" to be cast as BIGINT when inserting into the primary table
-            sql = text('INSERT INTO status_history ("noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock", "lockedStatus", "timestampMillisOfRetroLock", "statusId") SELECT "noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock"::BIGINT, "lockedStatus", "timestampMillisOfRetroLock", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
-
-            cn.execute(sql)
+        connection = db.getconn()
+        cursor = connection.cursor()
+        # Manually specify which columns to insert so that we can *force* "timestampMillisOfStatusLock" to be cast as BIGINT when inserting into the primary table
+        sql = text('INSERT INTO status_history ("noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock", "lockedStatus", "timestampMillisOfRetroLock", "statusId") SELECT "noteId", "noteAuthorParticipantId", "createdAtMillis", "timestampMillisOfFirstNonNMRStatus", "firstNonNMRStatus", "timestampMillisOfCurrentStatus", "currentStatus", "timestampMillisOfLatestNonNMRStatus", "mostRecentNonNMRStatus", "timestampMillisOfStatusLock"::BIGINT, "lockedStatus", "timestampMillisOfRetroLock", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+        cursor.execute(sql)
         try:
-            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
             logger.log_struct(
                 {
                     "message": 'Dropped temporary table',
@@ -416,7 +414,8 @@ def main(event_data, context):
                     "table-name": table_name,
                     "exception": str(type(e))
                 })
-        conn.commit()
+        cursor.close()
+        db.putconn(connection)
     except Exception as e:
         print('Error when processing noteStatusHistory:')
         print(str(type(e)))
@@ -428,18 +427,6 @@ def main(event_data, context):
                 "exception": str(type(e)),
                 "error": message
             })
-
-    print('Done! Now refreshing the db connection...')
-    try:
-        conn.close()
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-    except:
-        print('db connection failure')
-        quit()
 
     ## Get userEnrollmentStatus ##
     try:
@@ -479,18 +466,18 @@ def main(event_data, context):
         df.to_sql(table_name, db, if_exists='replace')
 
         # Some older data is likely to not include the modelPopulation value, so we add that column if it's not present. It will contain null data, but we add it just in case.
-        with db.begin() as cn:
-            # sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
-            sql = text('ALTER TABLE ' + table_name + ' ADD COLUMN IF NOT EXISTS "modelingPopulation" TEXT;')
-            cn.execute(sql)
+        connection = db.getconn()
+        cursor = connection.cursor()
+        # sql = text("""INSERT INTO enrollment_status SELECT * FROM """ + table_name + """ ON CONFLICT DO NOTHING""")
+        sql = text('ALTER TABLE ' + table_name + ' ADD COLUMN IF NOT EXISTS "modelingPopulation" TEXT;')
+        cursor.execute(sql)
 
         print('Now copying into the real table...')
         logger.log('Copying temp_userenrollment into enrollment_status', severity="INFO")
-        with db.begin() as cn:
-            sql = text('INSERT INTO enrollment_status ("participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId") SELECT "participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
-            cn.execute(sql)
+        sql = text('INSERT INTO enrollment_status ("participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId") SELECT "participantId", "enrollmentState", "successfulRatingNeededToEarnIn", "timestampOfLastStateChange", "timestampOfLastEarnOut", "modelingPopulation", "statusId" FROM ' + table_name + ' ON CONFLICT DO NOTHING;')
+        cursor.execute(sql)
         try:
-            cur.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
             logger.log_struct(
                 {
                     "message": 'Dropped temporary table',
@@ -508,7 +495,8 @@ def main(event_data, context):
                     "table-name": table_name,
                     "exception": str(type(e))
                 })
-        conn.commit()
+        cursor.close()
+        db.putconn(connection)
     except Exception as e:
         print('Error when processing userEnrollmentStatus:')
         print(str(type(e)))
@@ -521,28 +509,13 @@ def main(event_data, context):
                 "error": message
             })
 
-    
-    print('Attempting to Commit any lingering SQL changes')
-    logger.log('Attempting to Commit any lingering SQL changes', severity="INFO")
-    try:
-        conn.commit()
-    except Exception as e:
-        print('Unable to commit SQL changes. Was anything actually changed?')
-        print(str(type(e)))
-        logger.log_struct(
-            {
-                "message": "Unable to commit SQL changes. Was anything actually changed?",
-                "severity": "WARNING",
-                "exception": str(type(e))
-            })
 
 
-    # close the db connection
-    print('Closing the connection')
-    logger.log('Closing the db connection', severity="INFO")
-    conn.close()
 
-
+    # close the db connection pool:
+    if db:
+        db.closeall
+        print("PostgreSQL connection pool is closed")
 
     print('Done!')
 
