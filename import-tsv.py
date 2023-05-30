@@ -51,6 +51,13 @@ def connection_pool():
         print("Error while connecting to PostgreSQL", error)
         quit()
 
+def connection_engine():
+    conn_string = 'postgres://' + db_user + ':' + db_password + '@' + db_host + '/' + db_name
+    db_engine = create_engine(conn_string)
+    connection_engine = db_engine.connect()
+    return connection_engine
+
+
 def retrieve_tsv(object):
     path = 'gs://' + bucket_name + '/' + object
     print(f'Loading {path} into a pandas DataFrame...')
@@ -74,6 +81,9 @@ def main(event_data, context):
     
     # Set up a db connection pool
     db = connection_pool()
+
+    # Set up a db engine
+    engine = connection_engine()
 
 
     # Get the most recent downloaded file
@@ -115,7 +125,8 @@ def main(event_data, context):
             }
         )
 
-        df.to_sql(table_name, db, if_exists='replace')
+        df.to_sql(table_name, engine, if_exists='replace')
+        engine.commit()
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
         connection = db.getconn()
@@ -192,7 +203,8 @@ def main(event_data, context):
                 "table-name": table_name
             }
         )
-        df.to_sql(table_name, db, if_exists='replace')
+        df.to_sql(table_name, engine, if_exists='replace')
+        engine.commit()
 
         print('Now copying into the real table...')
         logger.log('Copying temp_ratings into ratings', severity="INFO")
@@ -279,7 +291,8 @@ def main(event_data, context):
                 "table-name": table_name
             }
         )
-        df.to_sql(table_name, db, if_exists='replace')
+        df.to_sql(table_name, engine, if_exists='replace')
+        engine.commit()
 
 
         # After moving data to the temporary table, attempt to force the column to be the correct type:
@@ -376,7 +389,8 @@ def main(event_data, context):
                 "table-name": table_name
             }
         )
-        df.to_sql(table_name, db, if_exists='replace')
+        df.to_sql(table_name, engine, if_exists='replace')
+        engine.commit()
 
         # Some older data is likely to not include the modelPopulation value, so we add that column if it's not present. It will contain null data, but we add it just in case.
         connection = db.getconn()
@@ -424,6 +438,9 @@ def main(event_data, context):
 
 
 
+    # close the db engine:
+    if engine:
+        engine.close()
 
     # close the db connection pool:
     if db:
