@@ -75,25 +75,6 @@ def main(event_data, context):
     # Set up a db connection pool
     db = connection_pool()
 
-    try:
-        # Using a with statement ensures that the connection is always released
-        # back into the pool at the end of statement (even if an error occurs)
-        conn = db.raw_connection()
-        cur = conn.cursor()
-        print('db connection seems to have worked')
-        logger.log('Database Connection was successful')
-    except Exception as e:
-        print('db connection failure')
-        print(str(type(e)))
-        logger.log_struct(
-            {
-                "message": "Database Connection Failure",
-                "severity": "ERROR",
-                "exception": str(type(e))
-            })
-        quit()
-
-    
 
     # Get the most recent downloaded file
     #   (with error handling for if a file is missing for whatever reason)
