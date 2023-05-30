@@ -114,17 +114,6 @@ def main(event_data, context):
             })
         object = file_path + '/notes.tsv'
         table_name = 'temp_notes_' + date.today().strftime("%Y%m%d")
-        try:
-            conn.close()
-            # Using a with statement ensures that the connection is always released
-            # back into the pool at the end of statement (even if an error occurs)
-            conn = db.raw_connection()
-            cur = conn.cursor()
-            print('db connection seems to have worked')
-        except:
-            print('db connection failure')
-            quit()
-        print(f'Searching for {object}')
         try: 
             df = retrieve_tsv(object)
             print(df.info())
@@ -180,17 +169,6 @@ def main(event_data, context):
                 })
 
 
-        print('Done! Now refreshing the db connection...')
-        try:
-            conn.close()
-            # Using a with statement ensures that the connection is always released
-            # back into the pool at the end of statement (even if an error occurs)
-            conn = db.raw_connection()
-            cur = conn.cursor()
-            print('db connection seems to have worked')
-        except:
-            print('db connection failure')
-            quit()
         
 
         # print('Now inserting data from table_temp into notes - and skipping duplicates')
@@ -266,17 +244,7 @@ def main(event_data, context):
                 })
 
 
-        print('Done! Now refreshing the db connection...')
-        try:
-            conn.close()
-            # Using a with statement ensures that the connection is always released
-            # back into the pool at the end of statement (even if an error occurs)
-            conn = db.raw_connection()
-            cur = conn.cursor()
-            print('db connection seems to have worked')
-        except:
-            print('db connection failure')
-            quit()
+
 
         ## Get noteStatusHistory ##
         logger.log_struct(
@@ -373,17 +341,7 @@ def main(event_data, context):
             
         
 
-        print('Done! Now refreshing the db connection...')
-        try:
-            conn.close()
-            # Using a with statement ensures that the connection is always released
-            # back into the pool at the end of statement (even if an error occurs)
-            conn = db.raw_connection()
-            cur = conn.cursor()
-            print('db connection seems to have worked')
-        except:
-            print('db connection failure')
-            quit()
+
 
         ## Get userEnrollmentStatus ##
         logger.log_struct(
