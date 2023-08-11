@@ -1,5 +1,58 @@
 # birdwatch-scraper
-Retrieves publicly accessible data from Twitter's Birdwatch program
+Retrieves publicly accessible data from Twitter's Birdwatch program. 
+
+These scripts download the files that Twitter publishes at https://twitter.com/i/birdwatch/download-data and saves them into a Google Cloud Storage bucket.
+
+The provided Dockerfile creates a container to parse the downloaded files and insert the data into a Postgres database.
+
+## Configuration
+
+Please be sure to create a `.env` file in the project root to provide the following information:
+
+```
+gcs_bucket_name='name-of-the-gcs-bucket'
+gcs_project_id='id-of-the-google-cloud-project'
+GCP_PROJECT='id-of-the-google-cloud-project'
+
+DB_USER='username'
+DB_PASS='password'
+DB_NAME='databasename'
+
+LOG_ID='name-for-the-log-in-google-cloud-logger'
+```
+
+Please create a Google Cloud service account with the following permissions:
+
+- Cloud Storage Object Admin
+- Cloud Logging Admin
+
+Create a key JSON file for that account, and place it in `./keys/credentials.json`
+
+## Installation
+
+Install python packages:
+
+```
+pip3 install -r requirements.txt
+```
+
+Build Docker container:
+
+```
+docker build -t birdwatch-importer .
+```
+
+Run Docker container:
+
+```
+docker run --name birdwatch-importer birdwatch-importer
+```
+
+## Scheduling
+
+I recommmend 
+
+---
 
 ## About Birdwatch
 
@@ -27,28 +80,29 @@ However, the URL structure for the actual data files seems consistent enough:
 - Ratings data: `https://ton.twimg.com/birdwatch-public-data/2022/11/09/noteRatings/ratings-00000.tsv`
 - Note status history data: `https://ton.twimg.com/birdwatch-public-data/2022/11/09/noteStatusHistory/noteStatusHistory-00000.tsv`
 
-These URLs are publicly accessible without authentication. Past data uploads appear to be accessible by swapping out the year, month, and dates. File names are consistent
-
-**update: this is only true for recent-ish files. Most everything else returns 404s :/
+These URLs are publicly accessible without authentication. Past data uploads appear to be accessible by swapping out the year, month, and dates. However, this is only true for recent-ish files. Most everything else returns 404s :/
 Looks like I can only get the last month or so
 
 # Project Goals:
 
 ## Short Term
 
-1. Download past data from the beginning of the Birdwatch program (January 2021, approx 675 days worth of data)
-2. Download new data after it is posted (ongoing, so long as Twitter keeps running Birdwatch)
+- [X] Download past data from the beginning of the Birdwatch program (January 2021, approx 675 days worth of data)
+- [X] Download new data after it is posted (ongoing, so long as Twitter keeps running Birdwatch)
 
 ## Long Term
 
-1. Ingest data from TSV files into a searchable database
-2. Analyze trends in Birdwatch participation
-3. Conduct distant reading of Birdwatch notes
+- [X] Ingest data from TSV files into a searchable database
+- [ ] Improve database and search efficiency
+- [ ] Analyze trends in Birdwatch participation
+- [ ] Conduct distant reading of Birdwatch notes
+- [ ] Save a list of Birdwatch User IDs and add ability to filter notes by author
 
 ## Longer Term
 
-1. Publish this processed data for other researchers to use
-2. Make a public interface to interact with the database in an easily accessible way
+- [X] Publish this processed data for other researchers to use
+- [X] Make a public interface to interact with the database in an easily accessible way
+- [ ] Consider options for downloading Tweet data
 
 # Notes:
 
@@ -69,3 +123,12 @@ Overriding the date:
 in `import-old-tsv.py` you can use the `START_DATE` environment variable to set the earliest date that the script should start with, formatted like so: `2023, 2, 19` or `2022, 12, 25`
 
 in `import-tsv.py` you can use the `DATE_OVERRIDE` environment variable to specify a date _other_ than the current system time. This can be useful if trying to do some testing, and there isn't a birdwatch file for the current day. Set this like so: `2023/02/22`
+
+<h5>A few notes:</h5>
+<p>In the coming weeks and months, I plan to do some more organization and more coherent write-up of changes and documentation. But in the meantime, here are some notes to myself (and to the world). </p>
+<ul>
+    <li>2023-03-11 - the noteStatusHistory.tsv file parsing was failing due to a type conflict in the columns. I reworked the scripts to better handle inserting that data into the main table from the temp table</li>
+    <li>2023-03-15 - I think that Twitter quietly added a new column to the data being provded in the userEnrollmentStatus.tsv files, a string for 'modelingPopulation' to indicate whether a user is being rated via the "CORE" or "EXPANSION" model. I'm not entirely sure what this is used for, and what the difference bewteen these models is</li>
+    <li>Looks like Twitter also has some scripts that match their internal processes for processing the raw data files and producing an aggregate file that matches what is in production (https://communitynotes.twitter.com/guide/en/under-the-hood/note-ranking-code.html) - I plan to implement my own scheduled process to run this script, in addition to what's already being collected</li>
+    <li>2023-05-29 - I am no longer using Google Cloud SQL to host the Birdwatch database, and have migrated to a locally hosted postgreSQL server instead. The website you are currently viewing has been migrated there as well. This provides faster access, more efficient ingest of new data, and lower hosting costs. However, it is slightly more volatile because I am reliant on a residential internet connection and residential power service.</li>
+</ul>
