@@ -50,7 +50,21 @@ docker run --name birdwatch-importer birdwatch-importer
 
 ## Scheduling
 
-I recommmend 
+I recommmend using `cron` to schedule the scripts to run on a regular basis. I was previously this schedule to download new data once per day:
+
+```
+0 12 * * * GOOGLE_APPLICATION_CREDENTIALS="/path/to/credentials.json" GCP_PROJECT="google-cloud-project-id" gcs_bucket_name="google-cloud-bucket-name" /usr/bin/python3 /path/to/download-new.py
+```
+
+I now use Google Cloud Scheduler to run this script as a Google Cloud Function. Just copy the contents of `download-new.py` and `requirements.py` into the source code for a function running Python. Use Cloud Scheduler to run the task every day. This will run much more quickly because it can save directly into Google Cloud Storage, rather than having to upload files over the public internet.
+
+I use this schedule to run the parser container in docker every day. I use bash substitution to provide each container with a unique name for when it is started:
+
+```
+30 12 * * * /usr/bin/docker run --name "birdwatch-parser-$(/usr/bin/date +\%s)" --network host --rm -d birdwatch-parser
+```
+
+Just make sure that you have built the container locally before running this.
 
 ---
 
