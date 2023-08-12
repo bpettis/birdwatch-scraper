@@ -1,6 +1,6 @@
 from google.cloud import storage
 import pandas as pd
-from datetime import date
+from datetime import date, datetime, timezone
 from sqlalchemy import create_engine, text
 import google.cloud.logging
 from datetime import datetime
@@ -74,6 +74,48 @@ def retrieve_tsv(object):
     return df
 
 
+def check_user(id, db):
+    connection = db.getconn()
+    cursor = connection.cursor()
+    sql = 'SELECT * FROM participants WHERE "participantId" = {0}'.format(id)
+    cursor.execute(sql)
+
+    result = cursor.rowcount()
+    cursor.close()
+
+    connection.commit()
+    db.putconn(connection)
+
+    if (result == 0):
+        return False
+    elif (result > 0):
+        return True
+    else:
+        return False # For edge cases 
+    
+def add_user(id, db):
+    logger.log_struct(
+        {
+            "message": "Adding user ID to participants table",
+            "severity": "INFO",
+            "participantID": id
+        })
+    try:
+        connection = db.getconn()
+        cursor = connection.cursor()
+        timestamp = datetime.now(timezone.utc)
+        sql = 'INSERT INTO participants ("participantId", "created_at", "updated_at") VALUES ({}, {}, {}) ON CONFLICT DO NOTHING'.format(timestamp, timestamp, id)
+        cursor.execute(sql)
+    except Exception as e:
+        logger.log_struct(
+            {
+                "message": "Error adding user ID to participants table",
+                "severity": "ERROR",
+                "participantID": id,
+                "exception": str(e)
+            })
+
+
 def main(event_data, context):
     # We have to include event_data and context because these will be passed as arguments when invoked as a Cloud Function
     # and the runtime will freak out if the function only accepts 0 arguments... go figure
@@ -115,6 +157,16 @@ def main(event_data, context):
         )
         print("***")
         print(df)
+
+        # Check and add users
+        for index, row in df.iterrows():
+            user_id = row["noteAuthorParticipantId"]
+            if (check_user(user_id, db) == False):
+                add_user(user_id, db)
+            else:
+                continue # User already exists. Continue
+
+        
         # # Insert data from that file into the db:
         print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
         logger.log_struct(
@@ -209,6 +261,14 @@ def main(event_data, context):
         )
         df.to_sql(table_name, engine, if_exists='replace')
         engine.commit()
+
+        # Check and add users
+        for index, row in df.iterrows():
+            user_id = row["raterParticipantId"]
+            if (check_user(user_id, db) == False):
+                add_user(user_id, db)
+            else:
+                continue # User already exists. Continue
 
         print('Now copying into the real table...')
         logger.log('Copying temp_ratings into ratings', severity="INFO")
@@ -398,6 +458,14 @@ def main(event_data, context):
         )
         df.to_sql(table_name, engine, if_exists='replace')
         engine.commit()
+
+        # Check and add users
+        for index, row in df.iterrows():
+            user_id = row["participantId"]
+            if (check_user(user_id, db) == False):
+                add_user(user_id, db)
+            else:
+                continue # User already exists. Continue
 
         # Some older data is likely to not include the modelPopulation value, so we add that column if it's not present. It will contain null data, but we add it just in case.
         connection = db.getconn()
