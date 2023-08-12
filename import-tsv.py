@@ -80,7 +80,7 @@ def check_user(id, db):
     sql = 'SELECT * FROM participants WHERE "participantId" = \'{0}\''.format(id)
     cursor.execute(sql)
 
-    result = cursor.rowcount()
+    result = cursor.rowcount
     cursor.close()
 
     connection.commit()
