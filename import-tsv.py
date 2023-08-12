@@ -77,7 +77,7 @@ def retrieve_tsv(object):
 def check_user(id, db):
     connection = db.getconn()
     cursor = connection.cursor()
-    sql = 'SELECT * FROM participants WHERE "participantId" = {0}'.format(id)
+    sql = 'SELECT * FROM participants WHERE "participantId" = "{0}"'.format(id)
     cursor.execute(sql)
 
     result = cursor.rowcount()
@@ -104,7 +104,7 @@ def add_user(id, db):
         connection = db.getconn()
         cursor = connection.cursor()
         timestamp = datetime.now(timezone.utc)
-        sql = 'INSERT INTO participants ("participantId", "created_at", "updated_at") VALUES ({}, {}, {}) ON CONFLICT DO NOTHING'.format(timestamp, timestamp, id)
+        sql = 'INSERT INTO participants ("participantId", "created_at", "updated_at") VALUES ("{}", "{}", "{}") ON CONFLICT DO NOTHING'.format(timestamp, timestamp, id)
         cursor.execute(sql)
     except Exception as e:
         logger.log_struct(
