@@ -99,7 +99,11 @@ def main(event_data, context):
 
 
     # Our list of dates to check only needs one date, today:
-    dates_list.append(date.today().strftime("%Y/%m/%d"))
+    # dates_list.append(date.today().strftime("%Y/%m/%d"))
+
+    # Check the last 5 days of data:
+    for i in range(5):
+        dates_list.append((date.today() - timedelta(days=i)).strftime("%Y/%m/%d"))
 
     # Use those dates to create a list of URLs to then download
     for target_date in dates_list:
@@ -110,14 +114,17 @@ def main(event_data, context):
         url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.tsv')
 
     for target in url_list:
-        # download notes
-        data = query_url(url_list[target]['notes'])
-        destination_file = target + '/notes.tsv'
-        if isinstance(data, bytes):
-            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            upload_blob(data, destination_file)
-        else:
-            print('seems something went wrong. check above for error messages')
+        # Download notes - which there are now up to 10 separate TSV files
+        for i in range(10):
+            current_url = url_list[target]['notes'].replace('00000', str(i).zfill(5)) # replace the 00000 with the correct number, padding with zeros if necessary
+            # download notes
+            data = query_url(current_url)
+            destination_file = target + '/notes' + str(i).zfill(5) + '.tsv'
+            if isinstance(data, bytes):
+                print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
+                upload_blob(data, destination_file)
+            else:
+                print(f'Error when downloading {current_url}. check above for error messages')
 
 
         # download ratings

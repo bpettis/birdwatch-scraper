@@ -93,28 +93,61 @@ def main(event_data, context):
 
     ## Get notes ##
     try:
-        object = file_path + '/notes.tsv'
+        
+        logger.log_struct(
+            {
+                "message": "Retrieving TSV Filess and loading into Pandas dataframe. This will probably take a LONG time",
+                "severity": "DEBUG",
+                "gcs-path-prefix": str(file_path)
+            })
+
+        # We are now downloading potentially up to 10 TSV files, which we need to concatenate into a single dataframe
+        mega_df = pd.DataFrame() # Create an empty dataframe
+        for i in range(10):
+            object = file_path + '/notes' + str(i).zfill(5) + '.tsv'
+            try:
+                df = retrieve_tsv(object)
+                mega_df = pd.concat([mega_df, df], ignore_index=True)
+            except Exception as e:
+                print('File does not exist')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "File does not exist",
+                        "severity": "WARNING",
+                        "object": str(object),
+                        "exception": str(type(e))
+                    })
+                continue
+        
+        logger.log_struct(
+            {
+                "message": "Created a mega dataframe with the contents of all TSV files with ratings data. Yeesh.",
+                "severity": "DEBUG",
+                "gcs-path-prefix": str(file_path)
+            })
+
         table_name = 'temp_notes_' + start_date
-        df = retrieve_tsv(object)
-        df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
-        print(df.info())
-        print(df)
+
+        mega_df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
+        print(mega_df.info())
+        print(mega_df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.shape[0]
+        size = mega_df.shape[0]
         drop = int(size * 0.9)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
-        df.drop(df.tail(drop).index, inplace = True)
+        mega_df.drop(mega_df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(df.shape[0]),
+                "new-size": str(mega_df.shape[0]),
                 "severity": 'INFO',
             }
         )
         print("***")
-        print(df)
+        print(mega_df)
         # # Insert data from that file into the db:
         print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
         logger.log_struct(
@@ -126,7 +159,7 @@ def main(event_data, context):
             }
         )
 
-        df.to_sql(table_name, engine, if_exists='replace')
+        mega_df.to_sql(table_name, engine, if_exists='replace')
         engine.commit()
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
