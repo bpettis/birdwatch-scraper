@@ -195,7 +195,7 @@ def main(event_data, context):
         # We are now downloading potentially up to 10 TSV files, which we need to concatenate into a single dataframe
         mega_df = pd.DataFrame() # Create an empty dataframe
         for i in range(10):
-            object = file_path + '/noteStatusHistory' + str(i).zfill(5) + '.tsv'
+            object = file_path + '/ratings' + str(i).zfill(5) + '.tsv'
             try:
                 df = retrieve_tsv(object)
                 mega_df = pd.concat([mega_df, df], ignore_index=True)
@@ -211,29 +211,27 @@ def main(event_data, context):
                     })
                 continue
 
-        object = file_path + '/ratings.tsv'
         table_name = 'temp_ratings_' + start_date
-        df = retrieve_tsv(object)
-        df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
-        df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        print(df.info())
-        print(df)
+        mega_df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
+        mega_df['ratingsId'] = mega_df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+        print(mega_df.info())
+        print(mega_df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.shape[0]
+        size = mega_df.shape[0]
         drop = int(size * 0.9)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
-        df.drop(df.tail(drop).index, inplace = True)
+        mega_df.drop(mega_df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(df.shape[0]),
+                "new-size": str(mega_df.shape[0]),
                 "severity": 'INFO',
             }
         )
         print("***")
-        print(df)
+        print(mega_df)
         print('Now converting dataframe into sql and placing into a temporary table')
         logger.log_struct(
             {
@@ -243,7 +241,7 @@ def main(event_data, context):
                 "table-name": table_name
             }
         )
-        df.to_sql(table_name, engine, if_exists='replace')
+        mega_df.to_sql(table_name, engine, if_exists='replace')
         engine.commit()
 
         print('Now copying into the real table...')
