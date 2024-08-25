@@ -125,6 +125,7 @@ def main(event_data, context):
             print(f'Error when downloading {current_url}. check above for error messages')
 
 
+
         # download ratings
         data = query_url(url_list[target]['ratings'])
         destination_file = target + '/ratings.tsv'

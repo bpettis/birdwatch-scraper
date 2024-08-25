@@ -96,6 +96,7 @@ def main(event_data, context):
         
         logger.log_struct(
             {
+
                 "message": "Retrieving TSV Filess and loading into Pandas dataframe. This may take a while since this can be a large file",
                 "severity": "DEBUG",
                 "gcs-path-prefix": str(file_path)
@@ -109,21 +110,21 @@ def main(event_data, context):
         print(df.info())
         print(df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = df.shape[0]
+        size = mega_df.shape[0]
         drop = int(size * 0.9)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
-        df.drop(df.tail(drop).index, inplace = True)
+        mega_df.drop(mega_df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(df.shape[0]),
+                "new-size": str(mega_df.shape[0]),
                 "severity": 'INFO',
             }
         )
         print("***")
-        print(df)
+        print(mega_df)
         # # Insert data from that file into the db:
         print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
         logger.log_struct(
@@ -135,7 +136,7 @@ def main(event_data, context):
             }
         )
 
-        df.to_sql(table_name, engine, if_exists='replace')
+        mega_df.to_sql(table_name, engine, if_exists='replace')
         engine.commit()
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
