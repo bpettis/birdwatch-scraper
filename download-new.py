@@ -114,7 +114,8 @@ def main(event_data, context):
         url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.tsv')
 
     for target in url_list:
-        # Download notes - which there are now up to 10 separate TSV files
+
+        # Download notes
         current_url = url_list[target]['notes']
         data = query_url(current_url)
         destination_file = target + '/notes' + str(i).zfill(5) + '.tsv'
@@ -142,7 +143,6 @@ def main(event_data, context):
         # download notes status history - which there are now up to 10 separate TSV files
 
         current_url = url_list[target]['noteStatusHistory']
-        # download notes
         data = query_url(current_url)
         destination_file = target + '/noteStatusHistory' + str(i).zfill(5) + '.tsv'
         if isinstance(data, bytes):
@@ -150,6 +150,7 @@ def main(event_data, context):
             upload_blob(data, destination_file)
         else:
             print(f'Error when downloading {current_url}. check above for error messages')
+
 
 
         # get user enrollment status data
