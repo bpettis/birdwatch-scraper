@@ -96,58 +96,34 @@ def main(event_data, context):
         
         logger.log_struct(
             {
-                "message": "Retrieving TSV Filess and loading into Pandas dataframe. This will probably take a LONG time",
+                "message": "Retrieving TSV Filess and loading into Pandas dataframe. This may take a while since this can be a large file",
                 "severity": "DEBUG",
                 "gcs-path-prefix": str(file_path)
             })
 
-        # We are now downloading potentially up to 10 TSV files, which we need to concatenate into a single dataframe
-        mega_df = pd.DataFrame() # Create an empty dataframe
-        for i in range(10):
-            object = file_path + '/notes' + str(i).zfill(5) + '.tsv'
-            try:
-                df = retrieve_tsv(object)
-                mega_df = pd.concat([mega_df, df], ignore_index=True)
-            except Exception as e:
-                print('File does not exist')
-                print(str(type(e)))
-                logger.log_struct(
-                    {
-                        "message": "File does not exist",
-                        "severity": "WARNING",
-                        "object": str(object),
-                        "exception": str(type(e))
-                    })
-                continue
-        
-        logger.log_struct(
-            {
-                "message": "Created a mega dataframe with the contents of all TSV files with ratings data. Yeesh.",
-                "severity": "DEBUG",
-                "gcs-path-prefix": str(file_path)
-            })
+        object = file_path + '/notes.tsv'
 
         table_name = 'temp_notes_' + start_date
 
-        mega_df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
-        print(mega_df.info())
-        print(mega_df)
+        df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
+        print(df.info())
+        print(df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = mega_df.shape[0]
+        size = df.shape[0]
         drop = int(size * 0.9)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
-        mega_df.drop(mega_df.tail(drop).index, inplace = True)
+        df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(mega_df.shape[0]),
+                "new-size": str(df.shape[0]),
                 "severity": 'INFO',
             }
         )
         print("***")
-        print(mega_df)
+        print(df)
         # # Insert data from that file into the db:
         print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
         logger.log_struct(
@@ -159,7 +135,7 @@ def main(event_data, context):
             }
         )
 
-        mega_df.to_sql(table_name, engine, if_exists='replace')
+        df.to_sql(table_name, engine, if_exists='replace')
         engine.commit()
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
@@ -208,6 +184,33 @@ def main(event_data, context):
 
     ## Get ratings ##
     try:
+
+        logger.log_struct(
+            {
+                "message": "Retrieving TSV Files for ratings and loading into Pandas dataframe. This will probably take a LONG time",
+                "severity": "DEBUG",
+                "gcs-path-prefix": str(file_path)
+            })
+
+        # We are now downloading potentially up to 10 TSV files, which we need to concatenate into a single dataframe
+        mega_df = pd.DataFrame() # Create an empty dataframe
+        for i in range(10):
+            object = file_path + '/noteStatusHistory' + str(i).zfill(5) + '.tsv'
+            try:
+                df = retrieve_tsv(object)
+                mega_df = pd.concat([mega_df, df], ignore_index=True)
+            except Exception as e:
+                print('File does not exist')
+                print(str(type(e)))
+                logger.log_struct(
+                    {
+                        "message": "File does not exist",
+                        "severity": "WARNING",
+                        "object": str(object),
+                        "exception": str(type(e))
+                    })
+                continue
+
         object = file_path + '/ratings.tsv'
         table_name = 'temp_ratings_' + start_date
         df = retrieve_tsv(object)
