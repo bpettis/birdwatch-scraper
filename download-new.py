@@ -114,6 +114,7 @@ def main(event_data, context):
         url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.tsv')
 
     for target in url_list:
+
         # Download notes
         current_url = url_list[target]['notes']
         data = query_url(current_url)
@@ -126,27 +127,30 @@ def main(event_data, context):
 
 
 
-        # download ratings
-        data = query_url(url_list[target]['ratings'])
-        destination_file = target + '/ratings.tsv'
-        if isinstance(data, bytes):
-            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
-            upload_blob(data, destination_file)
-        else:
-            print('seems something went wrong. check above for error messages')
-
-        # download notes status history - which there are now up to 10 separate TSV files
+        # download ratings - which is what has 10 separate files
 
         for i in range(10):
-            current_url = url_list[target]['noteStatusHistory'].replace('00000', str(i).zfill(5)) # replace the 00000 with the correct number, padding with zeros if necessary
+            current_url = url_list[target]['ratings'].replace('00000', str(i).zfill(5)) # replace the 00000 with the correct number, padding with zeros if necessary
             # download notes
             data = query_url(current_url)
-            destination_file = target + '/noteStatusHistory' + str(i).zfill(5) + '.tsv'
+            destination_file = target + '/ratings' + str(i).zfill(5) + '.tsv'
             if isinstance(data, bytes):
                 print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
                 upload_blob(data, destination_file)
             else:
                 print(f'Error when downloading {current_url}. check above for error messages')
+
+        # download notes status history - which there are now up to 10 separate TSV files
+
+        current_url = url_list[target]['noteStatusHistory']
+        data = query_url(current_url)
+        destination_file = target + '/noteStatusHistory' + str(i).zfill(5) + '.tsv'
+        if isinstance(data, bytes):
+            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
+            upload_blob(data, destination_file)
+        else:
+            print(f'Error when downloading {current_url}. check above for error messages')
+
 
 
         # get user enrollment status data
