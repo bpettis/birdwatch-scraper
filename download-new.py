@@ -125,6 +125,7 @@ def main(event_data, context):
             print(f'Error when downloading {current_url}. check above for error messages')
 
 
+
         # download ratings - which is what has 10 separate files
 
         for i in range(10):
