@@ -105,7 +105,7 @@ def main(event_data, context):
         object = file_path + '/notes.tsv'
 
         table_name = 'temp_notes_' + start_date
-
+        df = retrieve_tsv(object)
         df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
         print(df.info())
         print(df)
