@@ -118,7 +118,12 @@ def main(event_data, context):
         # Download notes
         current_url = url_list[target]['notes']
         data = query_url(current_url)
+
+        # This is wrong, I think:
         destination_file = target + '/notes' + str(i).zfill(5) + '.tsv'
+
+        # This is what the file should be named, if we're being sensible
+        destination_file = target + '/notes00000.tsv'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
             upload_blob(data, destination_file)

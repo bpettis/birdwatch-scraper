@@ -97,12 +97,18 @@ def main(event_data, context):
         logger.log_struct(
             {
 
-                "message": "Retrieving TSV Filess and loading into Pandas dataframe. This may take a while since this can be a large file",
+                "message": "Retrieving TSV Files and loading into Pandas dataframe. This may take a while since this can be a large file",
                 "severity": "DEBUG",
                 "gcs-path-prefix": str(file_path)
             })
 
         object = file_path + '/notes.tsv'
+
+        # This is what the file *should* be called, from here on out - but there may be some that were incorrectly named notes000004.tsv
+        object = file_path + '/notes00000.tsv'
+
+        # Temporary fix to try getting to old name:
+        object = file_path + '/notes00004.tsv'
 
         table_name = 'temp_notes_' + start_date
         df = retrieve_tsv(object)

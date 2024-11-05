@@ -66,6 +66,26 @@ I use this schedule to run the parser container in docker every day. I use bash 
 
 Just make sure that you have built the container locally before running this.
 
+## Getting participant ids
+
+The `participant-ids.sql` file contains some queries that will determine a list of participant IDs (don't worry - these are all anonymized and de-identified) from the notes, ratings, and enrollment_status tables.
+
+This need to run periodically to update the list of users/participants.
+
+I used `pg_cron` to automate these tasks. See https://github.com/citusdata/pg_cron
+
+After installing and configuring the extension, I set up the jobs. For example:
+
+```
+SELECT cron.schedule('Birdwatch Participant IDs from enrollment_status', '30 3 * * *', 'INSERT INTO participants ("participantId", "created_at", "updated_at") (SELECT DISTINCT "participantId", LOCALTIMESTAMP, LOCALTIMESTAMP FROM enrollment_status) ON CONFLICT DO NOTHING');
+```
+
+And then just made sure that everything was running on the correct database:
+
+```
+UPDATE cron.job SET DATABASE = 'birdwatch'; 
+```
+
 ---
 
 ## About Birdwatch
