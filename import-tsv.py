@@ -150,7 +150,7 @@ def main(event_data, context):
             }
         )
 
-        mega_df.to_sql(table_name, engine, if_exists='replace')
+        df.to_sql(table_name, engine, if_exists='replace')
         engine.commit()
         logger.log('Copying temp_notes into the notes table', severity="INFO")
         print('Now copying into the real table...')
