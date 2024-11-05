@@ -124,21 +124,21 @@ def main(event_data, context):
         print(df.info())
         print(df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = mega_df.shape[0]
+        size = df.shape[0]
         drop = int(size * 0.9)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
-        mega_df.drop(mega_df.tail(drop).index, inplace = True)
+        df.drop(df.tail(drop).index, inplace = True)
         logger.log_struct(
             {
                 "message": 'Dropped rows from dataframe',
                 "original-size": str(size),
                 "dropped-rows": str(drop),
-                "new-size": str(mega_df.shape[0]),
+                "new-size": str(df.shape[0]),
                 "severity": 'INFO',
             }
         )
         print("***")
-        print(mega_df)
+        print(df)
         # # Insert data from that file into the db:
         print(f'Now converting dataframe into sql and placing into a temporary table called {table_name}')
         logger.log_struct(
