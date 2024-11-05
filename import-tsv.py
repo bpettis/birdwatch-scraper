@@ -110,6 +110,14 @@ def main(event_data, context):
         # Temporary fix to try getting to old name:
         object = file_path + '/notes00004.tsv'
 
+        logger.log_struct(
+            {
+                "message": 'Built object name',
+                "object-name": str(object),
+                "severity": 'DEBUG',
+            }
+        )
+
         table_name = 'temp_notes_' + start_date
         df = retrieve_tsv(object)
         df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
