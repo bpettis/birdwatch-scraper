@@ -81,10 +81,11 @@ def main(event_data, context):
         # Download notes
         current_url = url_list[target]['notes']
         data = query_url(current_url)
+        
 
 
         # This is what the file should be named, if we're being sensible
-        destination_file = target + '/notes00000.tsv'
+        destination_file = target + '/notes00000.zip'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
             upload_blob(data, destination_file)
@@ -99,7 +100,7 @@ def main(event_data, context):
             current_url = url_list[target]['ratings'].replace('00000', str(i).zfill(5)) # replace the 00000 with the correct number, padding with zeros if necessary
             # download notes
             data = query_url(current_url)
-            destination_file = target + '/ratings' + str(i).zfill(5) + '.tsv'
+            destination_file = target + '/ratings' + str(i).zfill(5) + '.zip'
             if isinstance(data, bytes):
                 print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
                 upload_blob(data, destination_file)
@@ -110,7 +111,7 @@ def main(event_data, context):
 
         current_url = url_list[target]['noteStatusHistory']
         data = query_url(current_url)
-        destination_file = target + '/noteStatusHistory' + str(i).zfill(5) + '.tsv'
+        destination_file = target + '/noteStatusHistory' + str(i).zfill(5) + '.zip'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
             upload_blob(data, destination_file)
@@ -121,7 +122,7 @@ def main(event_data, context):
 
         # get user enrollment status data
         data = query_url(url_list[target]['userEnrollmentStatus'])
-        destination_file = target + '/userEnrollmentStatus.tsv'
+        destination_file = target + '/userEnrollmentStatus.zip'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
             upload_blob(data, destination_file)
