@@ -489,7 +489,84 @@ def main(event_data, context):
                 "error": message
             })
 
+    ## Get batSignal (Note Requests) ##
+    try:
+        object = file_path + '/batSignals.zip'
+        table_name = 'note_requests_' + start_date
+        df = retrieve_tsv(object)
+        df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
+        # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
+        df['statusId'] = df[['userId', 'createdAtMillis']].astype(str).apply(lambda x: ''.join(x), axis=1)
+        print(df.info())
+        print(df)
+        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+        size = df.shape[0]
+        drop = int(size * 0.9)
+        # drop = int(size - 10) # use a small number when testing - it'll go way faster!
+        drop = 0 # Keep
+        df.drop(df.tail(drop).index, inplace = True)
 
+        logger.log_struct(
+            {
+                "message": 'Dropped rows from dataframe',
+                "original-size": str(size),
+                "dropped-rows": str(drop),
+                "new-size": str(df.shape[0]),
+                "severity": 'INFO',
+            }
+        )
+        print("***")
+        print(df)
+        print('Now converting dataframe into sql and placing in a temporary table')
+        logger.log_struct(
+            {
+                "message": 'Now converting dataframe into sql and placing into a temporary table',
+                "severity": "INFO",
+                "object": str(object),
+                "table-name": table_name
+            }
+        )
+        df.to_sql(table_name, engine, if_exists='replace')
+        engine.commit()
+
+
+        print('Now copying into the real table...')
+        logger.log('Copying temp_note_requests into note_requests', severity="INFO")
+        sql = 'INSERT INTO note_requests ("statusId", "userId", "tweetId", "createdAtMillis", "sourceLink") SELECT "statusId", "userId", "tweetId", "createdAtMillis", "sourceLink" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
+        cursor.execute(sql)
+        try:
+            cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+            logger.log_struct(
+                {
+                    "message": 'Dropped temporary table',
+                    "severity": 'INFO',
+                    "table-name": table_name
+                }
+            )
+        except Exception as e:
+            print('Unable to drop a temp table. Does it actually exist?')
+            print(str(type(e)))
+            logger.log_struct(
+                {
+                    "message": "Error when dropping note_requests",
+                    "severity": "WARNING",
+                    "table-name": table_name,
+                    "exception": str(type(e))
+                })
+        cursor.close()
+        connection.commit()
+        db.putconn(connection)
+    except Exception as e:
+        print('Error when processing batSignals:')
+        print(str(type(e)))
+        message = e.args[0]
+        logger.log_struct(
+            {
+                "message": "Error when retreiving batSignals.tsv",
+                "severity": "WARNING",
+                "exception": str(type(e)),
+                "error": message
+            })
 
     # close the db engine:
     if engine:
