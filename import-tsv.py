@@ -69,8 +69,11 @@ def retrieve_tsv(object):
                 "object": str(object),
                 "gcs-path": str(path)
             })
-    # gs://birdwatch-scraper_public-data/2022/11/12/ratings.tsv
-    df = pd.read_csv(path, sep='\t', header=0)
+
+    
+    # Read the file
+    df = pd.read_csv(path, sep='\t', header=0, compression='zip')
+
     return df
 
 
