@@ -5,12 +5,14 @@ from google.cloud import storage
 import urllib.request, time, os
 import requests
 import gzip
+from dotenv import load_dotenv, find_dotenv
 
 
 
 # some global variables:
 end_date = date.today()
 
+load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 
