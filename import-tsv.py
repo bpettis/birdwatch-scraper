@@ -102,13 +102,9 @@ def main(event_data, context):
                 "gcs-path-prefix": str(file_path)
             })
 
-        object = file_path + '/notes.tsv'
-
         # This is what the file *should* be called, from here on out - but there may be some that were incorrectly named notes000004.tsv
-        object = file_path + '/notes00000.tsv'
+        object = file_path + '/notes00000.zip'
 
-        # Temporary fix to try getting to old name:
-        object = file_path + '/notes00004.tsv'
 
         logger.log_struct(
             {
@@ -209,8 +205,8 @@ def main(event_data, context):
 
         # We are now downloading potentially up to 10 TSV files, which we need to concatenate into a single dataframe
         mega_df = pd.DataFrame() # Create an empty dataframe
-        for i in range(10):
-            object = file_path + '/ratings' + str(i).zfill(5) + '.tsv'
+        for i in range(20):
+            object = file_path + '/ratings' + str(i).zfill(5) + '.zip'
             try:
                 df = retrieve_tsv(object)
                 mega_df = pd.concat([mega_df, df], ignore_index=True)
@@ -303,7 +299,7 @@ def main(event_data, context):
 
     ## Get noteStatusHistory ##
     try:
-        object = file_path + '/noteStatusHistory.tsv'
+        object = file_path + '/noteStatusHistory.zip'
         table_name = 'temp_status_' + start_date
         df = retrieve_tsv(object)
         try:
@@ -412,7 +408,7 @@ def main(event_data, context):
 
     ## Get userEnrollmentStatus ##
     try:
-        object = file_path + '/userEnrollmentStatus.tsv'
+        object = file_path + '/userEnrollmentStatus.zip'
         table_name = 'temp_enrollment_' + start_date
         df = retrieve_tsv(object)
         df.sort_values(by=['timestampOfLastStateChange'], ascending=False, inplace=True)
