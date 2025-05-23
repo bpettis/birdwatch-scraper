@@ -105,7 +105,7 @@ def main(event_data, context):
         url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.zip')
         url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.zip')
         url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.zip')
-
+        url_list[target_date]['batSignals'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/batSignals/batSignals-00000.zip')
 
     logger.log_struct(
         {
@@ -163,6 +163,16 @@ def main(event_data, context):
         # get user enrollment status data
         data = query_url(url_list[target]['userEnrollmentStatus'])
         destination_file = target + '/userEnrollmentStatus.zip'
+        if isinstance(data, bytes):
+            print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
+            upload_blob(data, destination_file)
+        else:
+            print('seems something went wrong. check above for error messages')
+            
+            
+        # get "Note Requests" (bat signals) data
+        data = query_url(url_list[target]['batSignals'])
+        destination_file = target + '/batSignals.zip'
         if isinstance(data, bytes):
             print(f'Looks like the download worked! Now saving {destination_file} to Google Cloud Storage')
             upload_blob(data, destination_file)
