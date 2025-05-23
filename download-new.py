@@ -94,8 +94,8 @@ def main(event_data, context):
     # Our list of dates to check only needs one date, today:
     # dates_list.append(date.today().strftime("%Y/%m/%d"))
 
-    # Check the last 5 days of data:
-    for i in range(5):
+    # Check the last 2 days of data:
+    for i in range(2):
         dates_list.append((date.today() - timedelta(days=i)).strftime("%Y/%m/%d"))
 
     # Use those dates to create a list of URLs to then download
