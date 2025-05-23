@@ -3,7 +3,7 @@ FROM python:3.11-buster
 WORKDIR /birdwatch-parsing
 
 COPY requirements.txt requirements.txt
-
+RUN apt-get install -y apt-transport-https
 RUN apt update && apt install -y gcc g++
 
 RUN pip3 install --upgrade pip
