@@ -96,7 +96,7 @@ def main(event_data, context):
 
         # download ratings - which is what has 10 separate files
 
-        for i in range(10):
+        for i in range(20):
             current_url = url_list[target]['ratings'].replace('00000', str(i).zfill(5)) # replace the 00000 with the correct number, padding with zeros if necessary
             # download notes
             data = query_url(current_url)
