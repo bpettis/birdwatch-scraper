@@ -32,44 +32,6 @@ def query_url(url):
         print(type(e))
         print(e)
         return 1
-    # try:
-    #     # request.add_header('Accept-Encoding','gzip, deflate')
-    #     response = urllib.request.urlopen(url)
-    #     code = response.getcode()
-    #     print(f'{url} - {code}')
-    #     print(response.headers.get_content_charset())
-    #     try:
-    #         content=gzip.decompress(response.read().decode('utf-8'))
-    #         gzip_fd = gzip.GzipFile(fileobj=fd)
-    #     except gzip.BadGzipFile as e:
-    #         content=response.read().decode('utf-8')
-    #     return content
-    # except HTTPError as e:
-    #     print(f'urllib.error.HTTPError - HTTP Error {e.code} | {e.reason}')
-    #     if e.code == 429: # HTTP 429 - too many requests
-    #         retry = e.headers['Retry-After'] # Check if the server told us how long to wait before sending the next request
-    #         try:
-    #             retry = int(retry) # Try converting to an int to check if we got a real number or not
-    #         except ValueError:
-    #             retry = 30 # We'll use the "Retry-After" value from the headers if present, but otherwise try again after 30 seconds
-    #         except TypeError:
-    #             retry = 30 # Use 30 seconds if we have a NoneType trying to go into the retry value
-    #         print(f'Waiting {retry} seconds before trying the next URL...')
-    #         time.sleep(retry)
-    #     return 1
-    # except ConnectionResetError as e:
-    #     print('Got ConnectionResetError - waiting a bit before trying the next URL')
-    #     time.sleep(15)
-    #     return 1
-    # except BrokenPipeError as e:
-    #     print('Got BrokenPipeError - waiting a bit before trying the next URL')
-    #     time.sleep(15)
-    #     return 1
-    # except Exception as e:
-    #     print(f'Got some other error when attempting to download {url}')
-    #     print(type(e))
-    #     print(e)
-    #     return 1
 
 def upload_blob(contents, destination_blob_name):
     """Uploads a file to the bucket."""
@@ -108,10 +70,11 @@ def main(event_data, context):
     # Use those dates to create a list of URLs to then download
     for target_date in dates_list:
         url_list[target_date] = {'notes': '', 'ratings': '', 'noteStatusHistory': '', 'userEnrollmentStatus': ''}
-        url_list[target_date]['notes'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/notes/notes-00000.tsv')
-        url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.tsv')
-        url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.tsv')
-        url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.tsv')
+        url_list[target_date]['notes'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/notes/notes-00000.zip')
+        url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.zip')
+        url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.zip')
+        url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.zip')
+
 
     for target in url_list:
 
@@ -119,8 +82,6 @@ def main(event_data, context):
         current_url = url_list[target]['notes']
         data = query_url(current_url)
 
-        # This is wrong, I think:
-        destination_file = target + '/notes' + str(i).zfill(5) + '.tsv'
 
         # This is what the file should be named, if we're being sensible
         destination_file = target + '/notes00000.tsv'
@@ -145,7 +106,7 @@ def main(event_data, context):
             else:
                 print(f'Error when downloading {current_url}. check above for error messages')
 
-        # download notes status history - which there are now up to 10 separate TSV files
+        # download notes status history
 
         current_url = url_list[target]['noteStatusHistory']
         data = query_url(current_url)
