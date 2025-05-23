@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from urllib.request import urlopen
 from urllib.error import HTTPError
 from google.cloud import storage
+import google.cloud.logging
 import urllib.request, time, os
 import requests
 import gzip
@@ -16,23 +17,45 @@ load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
 
+# Set up Google cloud logging:
+log_client = google.cloud.logging.Client(project=project_id)
+logger = log_client.logger(name=log_name)
+
 dates_list = []
 url_list = {}
 
 def query_url(url):
     print(f'Querying {url}')
+    logger.log_struct(
+            {
+                "message": "Querying URL and attempting to download file",
+                "severity": "INFO",
+                "url": str(url)
+            })
     try:
         r = requests.get(url, allow_redirects=True)
         print(r.status_code)
         if (r.status_code != 200):
             print("Didn't get a HTTP 200 response")
+            logger.log_struct(
+                {
+                    "message": "Didn't get a HTTP 200 response",
+                    "severity": "ERROR",
+                    "http-status": str(r.status_code),
+                })
             return 1
-        print(r.headers.get('content-type'))
+        print(r.headers.get('contnt-type'))
         return r.content
     except Exception as e:
         print('Something went wrong!')
         print(type(e))
         print(e)
+        logger.log_struct(
+            {
+                "message": "General error downloading file",
+                "severity": "ERROR",
+                "error": str(e)
+            })
         return 1
 
 def upload_blob(contents, destination_blob_name):
@@ -56,6 +79,12 @@ def upload_blob(contents, destination_blob_name):
     print(
         f"{destination_blob_name} was uploaded to {bucket_name}."
     )
+    logger.log_struct(
+        {
+            "message": "Finished Uploading file to GCS",
+            "severity": "INFO",
+            "destination_blob_name": str(destination_blob_name)
+        })
 
 def main(event_data, context):
     # We have to include event_data and context because these will be passed as arguments when invoked as a Cloud Function
@@ -76,6 +105,15 @@ def main(event_data, context):
         url_list[target_date]['ratings'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteRatings/ratings-00000.zip')
         url_list[target_date]['noteStatusHistory'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/noteStatusHistory/noteStatusHistory-00000.zip')
         url_list[target_date]['userEnrollmentStatus'] = ('https://ton.twimg.com/birdwatch-public-data/' + target_date + '/userEnrollment/userEnrollment-00000.zip')
+
+
+    logger.log_struct(
+        {
+            "message": "Created a list of URLs to try and download",
+            "severity": "DEBUG",
+            "url_list": str(url_list),
+            "dates_list": str(dates_list)
+        })
 
 
     for target in url_list:
