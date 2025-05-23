@@ -235,7 +235,7 @@ def main(event_data, context):
                         "message": 'Dropped rows from dataframe',
                         "original-size": str(size),
                         "dropped-rows": str(drop),
-                        "new-size": str(mega_df.shape[0]),
+                        "new-size": str(df.shape[0]),
                         "severity": 'INFO',
                     }
                 )
@@ -247,7 +247,7 @@ def main(event_data, context):
                         "table-name": table_name
                     }
                 )
-                mega_df.to_sql(table_name, engine, if_exists='replace')
+                df.to_sql(table_name, engine, if_exists='replace')
                 engine.commit()
 
                 print('Now copying into the real table...')
