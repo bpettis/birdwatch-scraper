@@ -206,88 +206,93 @@ def main(event_data, context):
                 "gcs-path-prefix": str(file_path)
             })
 
-        # We are now downloading potentially up to 10 TSV files, which we need to concatenate into a single dataframe
+        # We are now downloading potentially up to 20 TSV files, which we need to concatenate into a single dataframe
+        # Unfortunately, this takes a LOT of memory to do. It might be better to parse each file individually, rather than concatenating
         mega_df = pd.DataFrame() # Create an empty dataframe
         for i in range(20):
             object = file_path + '/ratings' + str(i).zfill(5) + '.zip'
             try:
+                logger.log_struct(
+                    {
+                        "message": "Parsing next ratings file",
+                        "severity": "INFO",
+                        "object": str(object),
+                        "counter": str(i)
+                    })
                 df = retrieve_tsv(object)
-                mega_df = pd.concat([mega_df, df], ignore_index=True)
+                table_name = 'temp_ratings_' + start_date + '_' + str(i).zfill(5)
+                df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
+                df['ratingsId'] = df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
+                print(df.info())
+                print(df)
+                # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
+                size = df.shape[0]
+                drop = int(size * 0.9)
+                # drop = int(size - 10) # use a small number when testing - it'll go way faster!
+                df.drop(df.tail(drop).index, inplace = True)
+                logger.log_struct(
+                    {
+                        "message": 'Dropped rows from dataframe',
+                        "original-size": str(size),
+                        "dropped-rows": str(drop),
+                        "new-size": str(mega_df.shape[0]),
+                        "severity": 'INFO',
+                    }
+                )
+                logger.log_struct(
+                    {
+                        "message": 'Now converting dataframe into sql and placing into a temporary table',
+                        "severity": "INFO",
+                        "object": str(object),
+                        "table-name": table_name
+                    }
+                )
+                mega_df.to_sql(table_name, engine, if_exists='replace')
+                engine.commit()
+
+                print('Now copying into the real table...')
+                logger.log('Copying temp_ratings into ratings', severity="INFO")
+                connection = db.getconn()
+                cursor = connection.cursor()
+                sql = 'INSERT INTO ratings ("noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId") SELECT "noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
+                cursor.execute(sql)
+                try:
+                    cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
+                    logger.log_struct(
+                        {
+                            "message": 'Dropped temporary table',
+                            "severity": 'INFO',
+                            "table-name": table_name
+                        }
+                    )
+                except Exception as e:
+                    print('Unable to drop a temp table. Does it actually exist?')
+                    print(str(type(e)))
+                    message = e.args[0]
+                    logger.log_struct(
+                        {
+                            "message": "Error when dropping temp_ratings",
+                            "severity": "WARNING",
+                            "table-name": table_name,
+                            "exception": str(type(e)),
+                            "error": message
+                        })
+                cursor.close()
+                connection.commit()
+                db.putconn(connection)
             except Exception as e:
-                print('File does not exist')
+                print('Problem when processing file')
                 print(str(type(e)))
                 logger.log_struct(
                     {
-                        "message": "File does not exist",
+                        "message": "Encountered problem when processing this file",
                         "severity": "WARNING",
                         "object": str(object),
                         "exception": str(type(e))
                     })
                 continue
 
-        table_name = 'temp_ratings_' + start_date
-        mega_df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
-        mega_df['ratingsId'] = mega_df[['noteId', 'raterParticipantId']].astype(str).apply(lambda x: ''.join(x), axis=1)
-        print(mega_df.info())
-        print(mega_df)
-        # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
-        size = mega_df.shape[0]
-        drop = int(size * 0.9)
-        # drop = int(size - 10) # use a small number when testing - it'll go way faster!
-        mega_df.drop(mega_df.tail(drop).index, inplace = True)
-        logger.log_struct(
-            {
-                "message": 'Dropped rows from dataframe',
-                "original-size": str(size),
-                "dropped-rows": str(drop),
-                "new-size": str(mega_df.shape[0]),
-                "severity": 'INFO',
-            }
-        )
-        print("***")
-        print(mega_df)
-        print('Now converting dataframe into sql and placing into a temporary table')
-        logger.log_struct(
-            {
-                "message": 'Now converting dataframe into sql and placing into a temporary table',
-                "severity": "INFO",
-                "object": str(object),
-                "table-name": table_name
-            }
-        )
-        mega_df.to_sql(table_name, engine, if_exists='replace')
-        engine.commit()
 
-        print('Now copying into the real table...')
-        logger.log('Copying temp_ratings into ratings', severity="INFO")
-        connection = db.getconn()
-        cursor = connection.cursor()
-        sql = 'INSERT INTO ratings ("noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId") SELECT "noteId", "createdAtMillis", "version", "agree", "disagree", "helpful", "notHelpful", "helpfulnessLevel", "helpfulOther", "helpfulInformative", "helpfulClear", "helpfulEmpathetic", "helpfulGoodSources", "helpfulUniqueContext", "helpfulAddressesClaim", "helpfulImportantContext", "helpfulUnbiasedLanguage", "notHelpfulOther", "notHelpfulIncorrect", "notHelpfulSourcesMissingOrUnreliable", "notHelpfulOpinionSpeculationOrBias", "notHelpfulMissingKeyPoints", "notHelpfulOutdated", "notHelpfulHardToUnderstand", "notHelpfulArgumentativeOrBiased", "notHelpfulOffTopic", "notHelpfulSpamHarassmentOrAbuse", "notHelpfulIrrelevantSources", "notHelpfulOpinionSpeculation", "notHelpfulNoteNotNeeded", "ratingsId", "raterParticipantId" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
-        cursor.execute(sql)
-        try:
-            cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
-            logger.log_struct(
-                {
-                    "message": 'Dropped temporary table',
-                    "severity": 'INFO',
-                    "table-name": table_name
-                }
-            )
-        except Exception as e:
-            print('Unable to drop a temp table. Does it actually exist?')
-            print(str(type(e)))
-            message = e.args[0]
-            logger.log_struct(
-                {
-                    "message": "Error when dropping temp_ratings",
-                    "severity": "WARNING",
-                    "table-name": table_name,
-                    "exception": str(type(e)),
-                    "error": message
-                })
-        cursor.close()
-        connection.commit()
-        db.putconn(connection)
     except Exception as e:
         print('Error when getting ratings:')
         print(str(type(e)))
