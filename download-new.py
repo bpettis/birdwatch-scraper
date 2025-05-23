@@ -16,7 +16,7 @@ end_date = date.today()
 load_dotenv(find_dotenv()) # load environment variables
 bucket_name = os.environ.get("gcs_bucket_name")
 project_id = os.environ.get("GCP_PROJECT")
-
+log_name = os.environ.get("LOG_ID")
 # Set up Google cloud logging:
 log_client = google.cloud.logging.Client(project=project_id)
 logger = log_client.logger(name=log_name)
