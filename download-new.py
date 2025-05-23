@@ -51,7 +51,7 @@ def upload_blob(contents, destination_blob_name):
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
 
-    blob.upload_from_string(contents, Timeout=300, Type="application/zip")
+    blob.upload_from_string(contents, timeout=300, content_type="application/zip")
 
     print(
         f"{destination_blob_name} was uploaded to {bucket_name}."
