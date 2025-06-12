@@ -11,6 +11,7 @@ RUN python3 -m pip install --upgrade setuptools
 RUN pip3 install -r requirements.txt
 
 COPY import-tsv.py import-tsv.py
+COPY batsignals-only.py batsignals-only.py
 COPY ./keys/credentials-sql.json credentials.json
 COPY .env .env
 
