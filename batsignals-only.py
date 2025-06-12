@@ -102,14 +102,14 @@ def main(event_data, context):
         df = retrieve_tsv(object)
         df.sort_values(by=['createdAtMillis'], ascending=False, inplace=True)
         # Participant Ids may be duplicated (because the same user's status may change), so we concatenate with the timestamp to create a primary key
-        df['statusId'] = df[['userId', 'createdAtMillis']].astype(str).apply(lambda x: ''.join(x), axis=1)
+        df['requestId'] = df[['userId', 'createdAtMillis']].astype(str).apply(lambda x: ''.join(x), axis=1)
         print(df.info())
         print(df)
         # Only keep the top 10% of the dataframe - we are almost always dealing with duplicated data, so this will improve runtime
         size = df.shape[0]
         drop = int(size * 0.9)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
-        drop = 0 # Keep
+        drop = 0 # Keep everything for now!
         df.drop(df.tail(drop).index, inplace = True)
 
         logger.log_struct(
@@ -138,7 +138,7 @@ def main(event_data, context):
 
         print('Now copying into the real table...')
         logger.log('Copying temp_note_requests into note_requests', severity="INFO")
-        sql = 'INSERT INTO note_requests ("statusId", "userId", "tweetId", "createdAtMillis", "sourceLink") SELECT "statusId", "userId", "tweetId", "createdAtMillis", "sourceLink" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
+        sql = 'INSERT INTO note_requests ("requestId", "userId", "tweetId", "createdAtMillis", "sourceLink") SELECT "requestId", "userId", "tweetId", "createdAtMillis", "sourceLink" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
         cursor.execute(sql)
         try:
             cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
