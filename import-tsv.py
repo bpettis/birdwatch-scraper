@@ -511,7 +511,7 @@ def main(event_data, context):
         size = df.shape[0]
         drop = int(size * 0.9)
         # drop = int(size - 10) # use a small number when testing - it'll go way faster!
-        drop = 0 # Keep everything!
+        # drop = 0 # Keep everything!
         df.drop(df.tail(drop).index, inplace = True)
 
         logger.log_struct(
