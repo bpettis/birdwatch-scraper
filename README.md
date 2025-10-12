@@ -30,16 +30,30 @@ Create a key JSON file for that account, and place it in `./keys/credentials.jso
 
 ## Installation
 
-Install python packages:
+I've set up both scripts to run within Docker containers, to _hopefully_ avoid problems later on down the road. Each is set up to execute their respective script on startup, and will stop once completed. See below for examples of using `cron` to launch each container on a regular basis
 
-```
-pip3 install -r requirements.txt
-```
+
+### File Downloader
 
 Build Docker container:
 
 ```
-docker build -t birdwatch-importer .
+docker build -t birdwatch-downloader -f download-Dockerfile .
+```
+
+Run Docker container:
+
+```
+docker run --name birdwatch-downloader birdwatch-downloader
+```
+
+### File Parser
+
+
+Build Docker container:
+
+```
+docker build -t birdwatch-importer -f Dockerfile .
 ```
 
 Run Docker container:
@@ -47,6 +61,7 @@ Run Docker container:
 ```
 docker run --name birdwatch-importer birdwatch-importer
 ```
+
 
 ## Scheduling
 
