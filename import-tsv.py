@@ -536,11 +536,15 @@ def main(event_data, context):
         )
         df.to_sql(table_name, engine, if_exists='replace')
         engine.commit()
+        
+        connection = db.getconn()
+        cursor = connection.cursor()
 
 
         print('Now copying into the real table...')
         logger.log('Copying temp_note_requests into note_requests', severity="INFO")
         sql = 'INSERT INTO note_requests ("requestId", "userId", "tweetId", "createdAtMillis", "sourceLink") SELECT "requestId", "userId", "tweetId", "createdAtMillis", "sourceLink" FROM {0} ON CONFLICT DO NOTHING;'.format(table_name)
+        # note_requests_20250613
         cursor.execute(sql)
         try:
             cursor.execute("""DROP TABLE IF EXISTS """ + table_name + """ CASCADE;""")
